@@ -1,0 +1,11 @@
+{
+  "effect.spelunker.spelunker": "Spéléologue",
+  "item.minecraft.potion.effect.spelunker": "Potion de Spéléologue",
+  "item.minecraft.potion.effect.long_spelunker": "Potion de Spéléologue",
+  "item.minecraft.splash_potion.effect.spelunker": "Potion de Spéléologue jetable",
+  "item.minecraft.splash_potion.effect.long_spelunker": "Potion de Spéléologue jetable",
+  "item.minecraft.lingering_potion.effect.spelunker": "Potion de Spéléologue persistante",
+  "item.minecraft.lingering_potion.effect.long_spelunker": "Potion de Spéléologue persistante",
+  "item.minecraft.tipped_arrow.effect.spelunker": "Flèche de Spéléologue",
+  "item.minecraft.tipped_arrow.effect.long_spelunker": "Flèche de Spéléologue"
+}
