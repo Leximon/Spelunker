@@ -1,9 +1,8 @@
-# Fabric Example Mod
+# Spelunker
 
-## Setup
+## Description
 
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+Simply adds the spelunker potion from Terraria.
 
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+The spelunker effect will highlight all ores in your surroundings. By default, this is a 16 block radius and is fully configurable in the configuration file.
+The potion is unbrewable and can only be found in mineshafts with a 35% chance.
