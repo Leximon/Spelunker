@@ -13,7 +13,7 @@
     "sources": "https://github.com/Lex305/Spelunker"
   },
 
-  "license": "CC0-1.0",
+  "license": "MIT",
   "icon": "assets/spelunker/icon.png",
 
   "environment": "*",
