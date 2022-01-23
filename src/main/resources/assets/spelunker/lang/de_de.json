@@ -1,0 +1,11 @@
+{
+  "effect.spelunker.spelunker": "Höhlenforscher",
+  "item.minecraft.potion.effect.spelunker": "Trank des Höhlenforschers",
+  "item.minecraft.potion.effect.long_spelunker": "Trank des Höhlenforschers",
+  "item.minecraft.splash_potion.effect.spelunker": "Wurftrank des Höhlenforschers",
+  "item.minecraft.splash_potion.effect.long_spelunker": "Wurftrank des Höhlenforschers",
+  "item.minecraft.lingering_potion.effect.spelunker": "Verweiltrank des Höhlenforschers",
+  "item.minecraft.lingering_potion.effect.long_spelunker": "Verweiltrank des Höhlenforschers",
+  "item.minecraft.tipped_arrow.effect.spelunker": "Pfeil des Höhlenforschers",
+  "item.minecraft.tipped_arrow.effect.long_spelunker": "Pfeil des Höhlenforschers"
+}

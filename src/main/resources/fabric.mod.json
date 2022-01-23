@@ -1,29 +1,32 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "spelunker",
   "version": "${version}",
 
-  "name": "Example Mod",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Spelunker",
+  "description": "Adds the spelunker potion from Terraria",
   "authors": [
-    "Me!"
+    "Leximon",
+    "Loki0500 (Icon Texture)"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/Lex305/Spelunker"
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/spelunker/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.fabricmc.example.ExampleMod"
+      "de.leximon.spelunker.SpelunkerMod"
+    ],
+    "tweed4:config": [
+      "de.leximon.spelunker.core.SpelunkerConfig"
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "spelunker.mixins.json"
   ],
 
   "depends": {
