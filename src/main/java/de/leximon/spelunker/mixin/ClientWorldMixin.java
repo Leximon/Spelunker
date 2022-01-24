@@ -1,10 +1,7 @@
 package de.leximon.spelunker.mixin;
 
-import de.leximon.spelunker.core.IWorldRenderer;
-import de.leximon.spelunker.core.SpelunkyEffectRenderer;
+import de.leximon.spelunker.SpelunkerMod;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.profiler.Profiler;
@@ -27,9 +24,7 @@ public abstract class ClientWorldMixin extends World {
     public void onBlockChanged(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
         if(!isClient)
             return;
-        WorldRenderer worldRenderer = MinecraftClient.getInstance().worldRenderer;
-        SpelunkyEffectRenderer spelunkyEffectRenderer = ((IWorldRenderer) worldRenderer).getSpelunkyEffectRenderer();
-        spelunkyEffectRenderer.updateBlock(pos);
+        SpelunkerMod.spelunkyEffectRenderer.updateBlock((ClientWorld) (Object) this, pos);
     }
 
 }

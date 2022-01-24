@@ -14,10 +14,21 @@ repositories {
 //	maven { url "https://maven.shedaniel.me/" }
 	maven { url "https://maven.terraformersmc.com/" }
 	maven {
+		url 'https://repo.maven.apache.org/maven2'
+		name 'Maven Central'
+	}
+	maven {
 		name "Siphalor's Maven"
 		url "https://maven.siphalor.de/"
 	}
 	maven { url "https://jitpack.io" }
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+		content {
+			includeGroup "maven.modrinth"
+		}
+	}
 	mavenLocal()
 }
 
@@ -36,12 +47,21 @@ dependencies {
 
 	modImplementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 
+	modImplementation("maven.modrinth:iris:${project.iris_version}")
+	modImplementation("maven.modrinth:sodium:${project.sodium_version}")
+	implementation("org.joml:joml:1.10.2")
+	modImplementation("org.anarres:jcpp:1.4.14")
+
 	include(modApi("de.siphalor.tweed4:tweed4-base-$project.minecraft_major_version:1.3.1+"))
 	include(modApi("de.siphalor.tweed4:tweed4-annotated-$project.minecraft_major_version:1.2.0+"))
 	include(modApi("de.siphalor.tweed4:tweed4-data-$project.minecraft_major_version:1.2.0+"))
 	include(modApi("de.siphalor.tweed4:tweed4-data-hjson-$project.minecraft_major_version:1.1.0+"))
 	include(modApi("de.siphalor.tweed4:tweed4-tailor-coat-$project.minecraft_major_version:1.0.2+"))
 	include(modApi("de.siphalor:coat-$project.minecraft_major_version:1.0.0-beta.15"))
+}
+
+loom {
+	accessWidenerPath = file("src/main/resources/spelunker.accesswidener")
 }
 
 processResources {

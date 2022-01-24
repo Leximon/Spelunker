@@ -35,29 +35,22 @@ public class SpelunkyEffectRenderer {
     private static final ModelPart.Cuboid CUBE = new ModelPart.Cuboid(0, 0, 0, 0, 0, 16, 16, 16, 0, 0, 0, false, 0, 0);
     private static final RenderLayer RENDER_LAYER = RenderLayer.getOutline(SpelunkerMod.identifier("textures/none.png"));
 
-    private final WorldRenderer worldRenderer;
     private final HashSet<OreChunkSection> chunkSections = new HashSet<>();
-    private HashMap<Block, Integer> blockHighlightColors = new HashMap<>();
+    private final HashMap<Block, Integer> blockHighlightColors = new HashMap<>();
     private int chunkRadius = 1;
     private int blockRadiusMax = (int) Math.pow(16, 2);
     private int blockRadiusMin = (int) Math.pow(15, 2);
     private Vec3d playerPos = Vec3d.ZERO;
     private boolean enabled = false;
 
-    public SpelunkyEffectRenderer(WorldRenderer worldRenderer) {
-        this.worldRenderer = worldRenderer;
-    }
-
-    public void render(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, OutlineVertexConsumerProvider vertexConsumers) {
-        if(!enabled)
-            return;
+    public void render(MatrixStack matrices, Camera camera, OutlineVertexConsumerProvider vertexConsumers) {
         Vec3d pos = camera.getPos();
         matrices.push();
         matrices.translate(-pos.x, -pos.y, -pos.z);
         {
             synchronized (chunkSections) {
                 for (OreChunkSection chunkSection : chunkSections)
-                    chunkSection.render(matrices, pos, tickDelta, limitTime, renderBlockOutline, vertexConsumers);
+                    chunkSection.render(matrices, pos, vertexConsumers);
             }
         }
         matrices.pop();
@@ -83,8 +76,7 @@ public class SpelunkyEffectRenderer {
         }
     }
 
-    public void updateChunks() {
-        ClientWorld world = ((IWorldRenderer) worldRenderer).getWorld();
+    public void updateChunks(ClientWorld world) {
         int cx = ChunkSectionPos.getSectionCoord(playerPos.x);
         int cy = world.sectionCoordToIndex(ChunkSectionPos.getSectionCoord(playerPos.y));
         int cz = ChunkSectionPos.getSectionCoord(playerPos.z);
@@ -108,7 +100,7 @@ public class SpelunkyEffectRenderer {
             // add
             for (Pair<Vec3i, ChunkSection> section : sections)
                 if (chunkSections.stream().noneMatch(s -> s.samePos(section.getLeft())))
-                    chunkSections.add(new OreChunkSection(section.getLeft(), section.getRight()));
+                    chunkSections.add(new OreChunkSection(world, section.getLeft(), section.getRight()));
         }
     }
 
@@ -127,8 +119,7 @@ public class SpelunkyEffectRenderer {
         }
     }
 
-    public void updateBlock(BlockPos pos) {
-        ClientWorld world = ((IWorldRenderer) worldRenderer).getWorld();
+    public void updateBlock(ClientWorld world, BlockPos pos) {
         int cx = ChunkSectionPos.getSectionCoord(pos.getX());
         int cy = world.sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY()));
         int cz = ChunkSectionPos.getSectionCoord(pos.getZ());
@@ -137,7 +128,7 @@ public class SpelunkyEffectRenderer {
         OreChunkSection oreChunk = chunkSections.stream().filter(section -> section.samePos(chunkPos)).findFirst().orElse(null);
         if(oreChunk == null)
             return;
-        oreChunk.updateOres();
+        oreChunk.updateOres(world);
     }
 
     private boolean isOreBlock(BlockState state) {
@@ -153,15 +144,14 @@ public class SpelunkyEffectRenderer {
         private final ChunkSection chunkSection;
         private final HashSet<Pair<BlockPos, BlockState>> ores = new HashSet<>();
 
-        public OreChunkSection(Vec3i pos, ChunkSection chunkSection) {
+        public OreChunkSection(ClientWorld world, Vec3i pos, ChunkSection chunkSection) {
             this.pos = pos;
             this.chunkSection = chunkSection;
-            updateOres();
+            updateOres(world);
         }
 
-        public void updateOres() {
+        public void updateOres(ClientWorld world) {
             ores.clear();
-            ClientWorld world = ((IWorldRenderer) worldRenderer).getWorld();
             var blockStates = chunkSection.getBlockStateContainer();
             for (int x = 0; x < 16; x++) {
                 for (int y = 0; y < 16; y++) {
@@ -180,9 +170,8 @@ public class SpelunkyEffectRenderer {
             }
         }
 
-        public void render(MatrixStack matrices, Vec3d playerPos, float tickDelta, long limitTime, boolean renderBlockOutline, OutlineVertexConsumerProvider vertexConsumers) {
+        public void render(MatrixStack matrices, Vec3d playerPos, OutlineVertexConsumerProvider vertexConsumers) {
             for (Pair<BlockPos, BlockState> ore : ores) {
-
                 BlockPos pos = ore.getLeft();
                 double squareDistance = pos.getSquaredDistance(playerPos, true);
                 float fade = Math.min(1 - (float) ((squareDistance - blockRadiusMin) / (blockRadiusMax - blockRadiusMin)), 1);
