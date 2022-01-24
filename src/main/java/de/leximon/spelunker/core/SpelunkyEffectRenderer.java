@@ -11,7 +11,6 @@ import net.minecraft.client.render.OutlineVertexConsumerProvider;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.util.Identifier;
@@ -27,7 +26,6 @@ import net.minecraft.world.chunk.WorldChunk;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
-import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class SpelunkyEffectRenderer {
@@ -110,7 +108,7 @@ public class SpelunkyEffectRenderer {
         blockRadiusMin = (int) Math.pow(SpelunkerConfig.radius - 1, 2);
 
         blockHighlightColors.clear();
-        for (SpelunkerConfig.BlockEntry blockEntry : SpelunkerConfig.blockHightlightColors) {
+        for (SpelunkerConfig.BlockEntry blockEntry : SpelunkerConfig.blockHighlightColors) {
             int color = HexFormat.fromHexDigits(blockEntry.highlightColor.substring(1));
             for (String blockId : blockEntry.blockIds) {
                 Block block = Registry.BLOCK.get(new Identifier(blockId));

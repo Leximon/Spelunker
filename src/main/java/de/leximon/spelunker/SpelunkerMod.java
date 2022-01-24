@@ -1,13 +1,8 @@
 package de.leximon.spelunker;
 
-import de.leximon.spelunker.core.SpelunkyEffectRenderer;
-import de.leximon.spelunker.mixin.WorldRendererAccessor;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.loot.v1.FabricLootPoolBuilder;
 import net.fabricmc.fabric.api.loot.v1.event.LootTableLoadingCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -29,9 +24,6 @@ public class SpelunkerMod implements ModInitializer {
 	public static StatusEffect STATUS_EFFECT_SPELUNKER;
 	public static Potion SPELUNKER_POTION;
 	public static Potion LONG_SPELUNKER_POTION;
-
-	public static SpelunkyEffectRenderer spelunkyEffectRenderer = new SpelunkyEffectRenderer();
-	public static boolean isAlreadyRenderingOutline = false;
 
 	@Override
 	public void onInitialize() {
@@ -57,21 +49,6 @@ public class SpelunkerMod implements ModInitializer {
 						)
 				);
 			}
-		});
-
-		// register renderer
-		WorldRenderEvents.LAST.register(context -> {
-			WorldRendererAccessor worldRenderer = (WorldRendererAccessor) context.worldRenderer();
-			MinecraftClient client = MinecraftClient.getInstance();
-
-			if (spelunkyEffectRenderer.isEnabled()) {
-				if(!isAlreadyRenderingOutline) { // prevent the outline shader from being rendered twice due glowing entities
-					worldRenderer.getEntityOutlineShader().render(context.tickDelta());
-					client.getFramebuffer().beginWrite(false);
-				}
-				spelunkyEffectRenderer.render(context.matrixStack(), context.camera(), worldRenderer.getBufferBuilders().getOutlineVertexConsumers());
-			}
-			isAlreadyRenderingOutline = false;
 		});
 	}
 

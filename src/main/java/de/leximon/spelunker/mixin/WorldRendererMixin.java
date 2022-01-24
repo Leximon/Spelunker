@@ -1,6 +1,6 @@
 package de.leximon.spelunker.mixin;
 
-import de.leximon.spelunker.SpelunkerMod;
+import de.leximon.spelunker.SpelunkerModClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.LightmapTextureManager;
@@ -17,6 +17,6 @@ public abstract class WorldRendererMixin {
 
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gl/ShaderEffect;render(F)V"))
     private void inject(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f positionMatrix, CallbackInfo ci) {
-        SpelunkerMod.isAlreadyRenderingOutline = true;
+        SpelunkerModClient.isAlreadyRenderingOutline = true;
     }
 }

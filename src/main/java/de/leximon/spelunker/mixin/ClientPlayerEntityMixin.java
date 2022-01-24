@@ -2,6 +2,7 @@ package de.leximon.spelunker.mixin;
 
 import com.mojang.authlib.GameProfile;
 import de.leximon.spelunker.SpelunkerMod;
+import de.leximon.spelunker.SpelunkerModClient;
 import de.leximon.spelunker.core.SpelunkyEffectRenderer;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -25,7 +26,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
 
     @Inject(method = "move", at = @At("TAIL"))
     private void moveEndInject(MovementType movementType, Vec3d movement, CallbackInfo ci) {
-        SpelunkyEffectRenderer renderer = SpelunkerMod.spelunkyEffectRenderer;
+        SpelunkyEffectRenderer renderer = SpelunkerModClient.spelunkyEffectRenderer;
 
         if(renderer.isEnabled()) {
             int lastCx = ChunkSectionPos.getSectionCoord(lastPosX);
@@ -47,7 +48,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void tickInject(CallbackInfo ci) {
-        SpelunkyEffectRenderer renderer = SpelunkerMod.spelunkyEffectRenderer;
+        SpelunkyEffectRenderer renderer = SpelunkerModClient.spelunkyEffectRenderer;
         if (renderer.setEnabled(hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))) {
             renderer.parseConfig();
             renderer.clear();

@@ -16,7 +16,7 @@ public class SpelunkerConfig {
 
     @AConfigEntry(constraints = @AConfigConstraint(value = RangeConstraint.class, param = "1.."))
     public static int radius = 16;
-    public static List<BlockEntry> blockHightlightColors = Arrays.asList(
+    public static List<BlockEntry> blockHighlightColors = Arrays.asList(
             new BlockEntry("#ffd1bd", "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
             new BlockEntry("#eb5e34", "minecraft:copper_ore", "minecraft:deepslate_copper_ore"),
             new BlockEntry("#505050", "minecraft:coal_ore", "minecraft:deepslate_coal_ore"),

@@ -21,6 +21,9 @@
     "main": [
       "de.leximon.spelunker.SpelunkerMod"
     ],
+    "client": [
+      "de.leximon.spelunker.SpelunkerModClient"
+    ],
     "tweed4:config": [
       "de.leximon.spelunker.core.SpelunkerConfig"
     ]
@@ -28,7 +31,6 @@
   "mixins": [
     "spelunker.mixins.json"
   ],
-  "accessWidener": "spelunker.accesswidener",
   "depends": {
     "fabricloader": ">=0.11.3",
     "fabric": "*",
