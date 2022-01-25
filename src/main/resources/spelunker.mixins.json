@@ -4,12 +4,16 @@
   "package": "de.leximon.spelunker.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "PlayerEntityMixin",
+    "WorldMixin"
+  ],
+  "server": [
+    "ServerWorldMixin"
   ],
   "client": [
     "ClientPlayerEntityMixin",
-    "ClientWorldMixin",
-    "WorldRendererMixin",
-    "WorldRendererAccessor"
+    "WorldRendererAccessor",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
