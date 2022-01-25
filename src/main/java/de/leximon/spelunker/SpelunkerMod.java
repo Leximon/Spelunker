@@ -22,6 +22,7 @@ public class SpelunkerMod implements ModInitializer {
 	public static final Identifier MINESHAFT_LOOT_TABLE = new Identifier("chests/abandoned_mineshaft");
 
 	public static final Identifier PACKET_ORE_CHUNKS = identifier("ore_chunks");
+	public static final Identifier PACKET_ORE_CHUNK = identifier("ore_chunk");
 
 	public static StatusEffect STATUS_EFFECT_SPELUNKER;
 	public static Potion SPELUNKER_POTION;

@@ -17,7 +17,9 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,7 +36,7 @@ public class SpelunkerEffectRenderer {
         matrices.push();
         matrices.translate(-pos.x, -pos.y, -pos.z);
         {
-            synchronized (chunkSections) {
+            synchronized (this) {
                 for (OreChunkSection chunkSection : chunkSections)
                     chunkSection.render(matrices, pos, vertexConsumers);
             }
@@ -53,13 +55,13 @@ public class SpelunkerEffectRenderer {
     }
 
     public void clear() {
-        synchronized (chunkSections) {
+        synchronized (this) {
             chunkSections.clear();
         }
     }
 
     public void updateChunks(World world, HashSet<Vec3i> remove, HashSet<Vec3i> add) {
-        synchronized (chunkSections) {
+        synchronized (this) {
             chunkSections.removeIf(s -> remove.stream().anyMatch(s.pos::equals));
             for (Vec3i pos : add) {
                 chunkSections.add(new OreChunkSection(
@@ -79,22 +81,26 @@ public class SpelunkerEffectRenderer {
     }
 
     public void removeChunk(Vec3i pos) {
-        synchronized (chunkSections) {
+        synchronized (this) {
             chunkSections.removeIf(s -> s.pos.equals(pos));
         }
     }
 
-    public void addChunk(World world, Vec3i pos, Set<Pair<Vec3i, BlockState>> ores) {
-        synchronized (chunkSections) {
-            chunkSections.add(new OreChunkSection(pos, ores.stream()
-                    .peek(pair -> {
-                        var p = pair.getLeft();
-                        pair.setLeft(new Vec3i(
-                                ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX(),
-                                ChunkSectionPos.getBlockCoord(world.sectionIndexToCoord(pos.getY())) + p.getY(),
-                                ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ()
-                        ));
-                    }).collect(Collectors.toSet())));
+    public void addChunks(World world, HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks) {
+        synchronized (this) {
+            for (Map.Entry<Vec3i, Set<Pair<Vec3i, BlockState>>> entry : chunks.entrySet()) {
+                Vec3i pos = entry.getKey();
+                Set<Pair<Vec3i, BlockState>> ores = entry.getValue();
+                chunkSections.add(new OreChunkSection(pos, ores.stream()
+                        .peek(pair -> {
+                            var p = pair.getLeft();
+                            pair.setLeft(new Vec3i(
+                                    ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX(),
+                                    ChunkSectionPos.getBlockCoord(world.sectionIndexToCoord(pos.getY())) + p.getY(),
+                                    ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ()
+                            ));
+                        }).collect(Collectors.toSet())));
+            }
         }
     }
 

@@ -30,6 +30,8 @@ public class SpelunkerModClient implements ClientModInitializer {
             isAlreadyRenderingOutline = false;
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(SpelunkerMod.PACKET_ORE_CHUNKS, (client, handler, buf, sender) -> SpelunkerEffectManager.readPacket(spelunkerEffectRenderer, buf));
+        ClientPlayNetworking.registerGlobalReceiver(SpelunkerMod.PACKET_ORE_CHUNKS, (client, handler, buf, sender) -> {
+            SpelunkerEffectManager.readPacket(spelunkerEffectRenderer, buf);
+        });
     }
 }

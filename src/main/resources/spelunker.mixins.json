@@ -8,7 +8,8 @@
     "WorldMixin"
   ],
   "server": [
-    "ServerWorldMixin"
+    "ServerWorldMixin",
+    "ServerChunkManagerAccessor"
   ],
   "client": [
     "ClientPlayerEntityMixin",

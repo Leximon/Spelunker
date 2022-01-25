@@ -1,30 +1,56 @@
 package de.leximon.spelunker.core;
 
 import de.leximon.spelunker.SpelunkerMod;
+import de.leximon.spelunker.mixin.ServerChunkManagerAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class SpelunkerEffectManager {
 
-    public static HashSet<Pair<Vec3i, BlockState>> findOresInChunk(World world, Vec3i sectionPos) {
-        ChunkSection section = world.getChunk(sectionPos.getX(), sectionPos.getZ()).getSection(sectionPos.getY());
+    public static Set<Pair<Vec3i, BlockState>> findOresInChunk(World world, Vec3i sectionPos) {
+        Chunk chunk = null;
+        if(world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
+            if (world instanceof ServerWorld sw) {
+                try {
+                    var future = ((ServerChunkManagerAccessor) sw.getChunkManager()).invokeGetChunkFuture(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
+                    var chunkEither = future.get(2000, TimeUnit.MILLISECONDS);
+                    chunk = chunkEither.left().orElse(null);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                } catch (TimeoutException e) {
+                    SpelunkerMod.LOGGER.warn("Ignored sending chunk section at {}", sectionPos);
+                }
+            } else {
+                chunk = world.getChunk(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
+            }
+        }
+        if (chunk == null)
+            return Collections.emptySet();
+        ChunkSection section = chunk.getSection(sectionPos.getY());
         HashSet<Pair<Vec3i, BlockState>> ores = new HashSet<>();
         var blockStates = section.getBlockStateContainer();
         for (int x = 0; x < 16; x++) {
@@ -63,6 +89,20 @@ public class SpelunkerEffectManager {
             }
         }
         return sections;
+    }
+
+    public static PacketByteBuf writePacket(World world, Vec3i pos, boolean remove) {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeBoolean(remove);
+
+        buf.writeVarInt(pos.getX());
+        buf.writeVarInt(pos.getY());
+        buf.writeVarInt(pos.getZ());
+
+        if(!remove) {
+
+        }
+        return buf;
     }
 
     public static PacketByteBuf findOresAndWritePacket(World world, HashSet<Vec3i> remove, HashSet<Vec3i> add) {
@@ -108,6 +148,7 @@ public class SpelunkerEffectManager {
         }
 
         c = buf.readVarInt();
+        HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks = new HashMap<>();
         for (int i = 0; i < c; i++) {
             Vec3i pos = new Vec3i(
                     buf.readVarInt(),
@@ -125,9 +166,9 @@ public class SpelunkerEffectManager {
                 );
                 ores.add(new Pair<>(orePos, Registry.BLOCK.get(buf.readVarInt()).getDefaultState()));
             }
-
-            renderer.addChunk(MinecraftClient.getInstance().world, pos, ores);
+            chunks.put(pos, ores);
         }
+        renderer.addChunks(MinecraftClient.getInstance().world, chunks);
     }
 
 }
