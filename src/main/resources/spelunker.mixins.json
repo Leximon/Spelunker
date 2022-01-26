@@ -5,11 +5,12 @@
   "compatibilityLevel": "JAVA_16",
   "mixins": [
     "PlayerEntityMixin",
+    "ThreadedAnvilChunkStorageAccessor",
     "WorldMixin"
   ],
   "server": [
-    "ServerWorldMixin",
-    "ServerChunkManagerAccessor"
+    "ServerChunkManagerAccessor",
+    "ServerWorldMixin"
   ],
   "client": [
     "ClientPlayerEntityMixin",

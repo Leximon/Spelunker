@@ -45,11 +45,12 @@ public abstract class WorldMixin implements IWorld {
         chunks.add(cPos);
 
         if (isClient()) {
-            SpelunkerModClient.spelunkerEffectRenderer.updateChunks((World) (Object) this, chunks, chunks);
+            if(!SpelunkerConfig.serverValidating)
+                SpelunkerModClient.spelunkerEffectRenderer.updateChunks((World) (Object) this, chunks, chunks);
             return;
         }
 
-        if (!SpelunkerConfig.serverSideValidating)
+        if (!SpelunkerConfig.serverValidating)
             return;
 
         // send to clients

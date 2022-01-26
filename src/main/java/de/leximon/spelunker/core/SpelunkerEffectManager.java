@@ -1,16 +1,16 @@
 package de.leximon.spelunker.core;
 
-import de.leximon.spelunker.SpelunkerMod;
-import de.leximon.spelunker.mixin.ServerChunkManagerAccessor;
+import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Pair;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
@@ -25,9 +25,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class SpelunkerEffectManager {
 
@@ -35,15 +32,10 @@ public class SpelunkerEffectManager {
         Chunk chunk = null;
         if(world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
             if (world instanceof ServerWorld sw) {
-                try {
-                    var future = ((ServerChunkManagerAccessor) sw.getChunkManager()).invokeGetChunkFuture(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
-                    var chunkEither = future.get(2000, TimeUnit.MILLISECONDS);
-                    chunk = chunkEither.left().orElse(null);
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                } catch (TimeoutException e) {
-                    SpelunkerMod.LOGGER.warn("Ignored sending chunk section at {}", sectionPos);
-                }
+                ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage)
+                        .spelunkerGetChunkHolder(ChunkPos.toLong(sectionPos.getX(), sectionPos.getZ()));
+                if(chunkHolder != null)
+                    chunk = chunkHolder.getWorldChunk();
             } else {
                 chunk = world.getChunk(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
             }

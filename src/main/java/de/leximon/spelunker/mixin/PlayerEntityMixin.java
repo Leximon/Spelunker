@@ -41,7 +41,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             forceOreChunkUpdate = true;
             return;
         }
-        if(SpelunkerConfig.serverSideValidating && world.isClient())
+        if(SpelunkerConfig.serverValidating && world.isClient())
             return;
         double x = getX();
         double y = getY();
@@ -79,7 +79,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             // handle new and removed chunk sections
             if(world.isClient()) {
                 SpelunkerModClient.spelunkerEffectRenderer.updateChunks(world, remove, add);
-            } else if(SpelunkerConfig.serverSideValidating) {
+            } else if(SpelunkerConfig.serverValidating) {
                 PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket(world, remove, add);;
                 ServerPlayNetworking.send((ServerPlayerEntity) (Object) this, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
             }

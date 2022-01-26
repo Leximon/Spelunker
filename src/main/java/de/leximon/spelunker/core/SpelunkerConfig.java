@@ -22,9 +22,9 @@ import java.util.List;
 public class SpelunkerConfig {
 
     @AConfigEntry(comment = "Checks serverside for blocks to be highlighted and sends them to the client\nrecommended if the server has an anti-xray mod")
-    public static boolean serverSideValidating = true;
+    public static boolean serverValidating = true;
     @AConfigEntry(comment = "How many blocks the effect should range\na higher value than 32 is not recommended", constraints = @AConfigConstraint(value = RangeConstraint.class, param = "1.."))
-    public static int radius = 16;
+    public static int effectRadius = 16;
     public static List<BlockEntry> blockHighlightColors = Arrays.asList(
             new BlockEntry("#ffd1bd", "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
             new BlockEntry("#eb5e34", "minecraft:copper_ore", "minecraft:deepslate_copper_ore"),
@@ -37,7 +37,7 @@ public class SpelunkerConfig {
             new BlockEntry("#ffffff", "minecraft:nether_quartz_ore")
     );
     @AConfigEntry(environment = ConfigEnvironment.CLIENT)
-    public static boolean transitions = true;
+    public static boolean blockTransitions = true;
 
     @AConfigExclude public static HashMap<Block, Integer> parsedBlockHighlightColors = new HashMap<>();
     @AConfigExclude public static int chunkRadius = 1;
@@ -46,9 +46,9 @@ public class SpelunkerConfig {
 
     @AConfigListener
     public void reload() {
-        chunkRadius = (int) Math.ceil(radius / 16f);
-        blockRadiusMax = (int) Math.pow(radius, 2);
-        blockRadiusMin = (int) Math.pow(radius - 1, 2);
+        chunkRadius = (int) Math.ceil(effectRadius / 16f);
+        blockRadiusMax = (int) Math.pow(effectRadius, 2);
+        blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
 
         parsedBlockHighlightColors.clear();
         for (SpelunkerConfig.BlockEntry blockEntry : blockHighlightColors) {

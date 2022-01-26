@@ -1,8 +1,6 @@
 package de.leximon.spelunker.core;
 
 import de.leximon.spelunker.SpelunkerMod;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.Camera;
@@ -115,7 +113,7 @@ public class SpelunkerEffectRenderer {
                 Vec3i pos = ore.getLeft();
                 double squareDistance = pos.getSquaredDistance(playerPos, true);
                 float fade;
-                if(SpelunkerConfig.transitions) {
+                if(SpelunkerConfig.blockTransitions) {
                     fade = Math.min(1 - (float) ((squareDistance - SpelunkerConfig.blockRadiusMin) / (SpelunkerConfig.blockRadiusMax - SpelunkerConfig.blockRadiusMin)), 1);
                     fade = easeOutCirc(fade);
                 } else {
