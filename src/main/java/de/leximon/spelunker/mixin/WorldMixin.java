@@ -8,6 +8,7 @@ import de.leximon.spelunker.core.SpelunkerEffectManager;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -36,6 +37,11 @@ public abstract class WorldMixin implements IWorld {
 
     @Override
     public void spelunkerUpdateBlock(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
+        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) (Object) this, pos).stream()
+                .filter(p -> p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
+                .toList();
+        if (players.size() == 0)
+            return;
         Vec3i cPos = new Vec3i(
                 ChunkSectionPos.getSectionCoord(pos.getX()),
                 ((World) (Object) this).sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY())),
@@ -45,7 +51,7 @@ public abstract class WorldMixin implements IWorld {
         chunks.add(cPos);
 
         if (isClient()) {
-            if(!SpelunkerConfig.serverValidating)
+            if(!SpelunkerConfig.serverValidating || MinecraftClient.getInstance().isInSingleplayer())
                 SpelunkerModClient.spelunkerEffectRenderer.updateChunks((World) (Object) this, chunks, chunks);
             return;
         }
@@ -54,11 +60,6 @@ public abstract class WorldMixin implements IWorld {
             return;
 
         // send to clients
-        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) (Object) this, pos).stream()
-                .filter(p -> p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
-                .toList();
-        if (players.size() == 0)
-            return;
         PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket((World) (Object) this, chunks, chunks);
         for (ServerPlayerEntity p : PlayerLookup.tracking((ServerWorld) (Object) this, pos)) {
             if (p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
