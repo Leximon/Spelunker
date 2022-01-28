@@ -37,11 +37,6 @@ public abstract class WorldMixin implements IWorld {
 
     @Override
     public void spelunkerUpdateBlock(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
-        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) (Object) this, pos).stream()
-                .filter(p -> p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
-                .toList();
-        if (players.size() == 0)
-            return;
         Vec3i cPos = new Vec3i(
                 ChunkSectionPos.getSectionCoord(pos.getX()),
                 ((World) (Object) this).sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY())),
@@ -57,6 +52,12 @@ public abstract class WorldMixin implements IWorld {
         }
 
         if (!SpelunkerConfig.serverValidating)
+            return;
+
+        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) (Object) this, pos).stream()
+                .filter(p -> p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
+                .toList();
+        if (players.size() == 0)
             return;
 
         // send to clients
