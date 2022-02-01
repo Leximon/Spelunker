@@ -5,6 +5,8 @@ import de.leximon.spelunker.SpelunkerModClient;
 import de.leximon.spelunker.core.IWorld;
 import de.leximon.spelunker.core.SpelunkerConfig;
 import de.leximon.spelunker.core.SpelunkerEffectManager;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
@@ -46,8 +48,7 @@ public abstract class WorldMixin implements IWorld {
         chunks.add(cPos);
 
         if (isClient()) {
-            if(!SpelunkerConfig.serverValidating || MinecraftClient.getInstance().isInSingleplayer())
-                SpelunkerModClient.spelunkerEffectRenderer.updateChunks((World) (Object) this, chunks, chunks);
+            spelunkerUpdateClient((World) (Object) this, chunks);
             return;
         }
 
@@ -66,5 +67,11 @@ public abstract class WorldMixin implements IWorld {
             if (p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
                 ServerPlayNetworking.send(p, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
         }
+    }
+
+    @Environment(EnvType.CLIENT)
+    private void spelunkerUpdateClient(World world, HashSet<Vec3i> chunks) {
+        if (!SpelunkerConfig.serverValidating || MinecraftClient.getInstance().isInSingleplayer())
+            SpelunkerModClient.spelunkerEffectRenderer.updateChunks(world, chunks, chunks);
     }
 }
