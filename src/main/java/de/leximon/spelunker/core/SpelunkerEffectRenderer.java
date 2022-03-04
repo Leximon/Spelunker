@@ -111,7 +111,7 @@ public class SpelunkerEffectRenderer {
         public void render(MatrixStack matrices, Vec3d playerPos, OutlineVertexConsumerProvider vertexConsumers) {
             for (Pair<Vec3i, BlockState> ore : ores) {
                 Vec3i pos = ore.getLeft();
-                double squareDistance = pos.getSquaredDistance(playerPos, true);
+                double squareDistance = pos.getSquaredDistanceFromCenter(playerPos.getX(), playerPos.getY(), playerPos.getZ());
                 float fade;
                 if(SpelunkerConfig.blockTransitions) {
                     fade = Math.min(1 - (float) ((squareDistance - SpelunkerConfig.blockRadiusMin) / (SpelunkerConfig.blockRadiusMax - SpelunkerConfig.blockRadiusMin)), 1);
