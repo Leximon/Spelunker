@@ -1,75 +1,107 @@
 package de.leximon.spelunker.core;
 
-import com.google.common.base.CaseFormat;
-import de.siphalor.tweed4.annotated.AConfigConstraint;
-import de.siphalor.tweed4.annotated.AConfigEntry;
-import de.siphalor.tweed4.annotated.AConfigExclude;
-import de.siphalor.tweed4.annotated.AConfigListener;
-import de.siphalor.tweed4.annotated.ATweedConfig;
-import de.siphalor.tweed4.config.ConfigEnvironment;
-import de.siphalor.tweed4.config.ConfigScope;
-import de.siphalor.tweed4.config.constraints.RangeConstraint;
+import de.siphalor.tweed4.data.hjson.HjsonList;
+import de.siphalor.tweed4.data.hjson.HjsonObject;
+import de.siphalor.tweed4.data.hjson.HjsonSerializer;
+import de.siphalor.tweed4.data.hjson.HjsonValue;
 import net.minecraft.block.Block;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 
-import java.util.Arrays;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 
-@ATweedConfig(serializer = "tweed4:hjson", scope = ConfigScope.WORLD, environment = ConfigEnvironment.SYNCED, casing = CaseFormat.LOWER_HYPHEN)
 public class SpelunkerConfig {
 
-    @AConfigEntry(comment = "Checks serverside for blocks to be highlighted and sends them to the client\nrecommended if the server has an anti-xray mod")
     public static boolean serverValidating = true;
-    @AConfigEntry(comment = "How many blocks the effect should range\na higher value than 32 is not recommended", constraints = @AConfigConstraint(value = RangeConstraint.class, param = "1.."))
-    public static int effectRadius = 16;
-    public static List<BlockEntry> blockHighlightColors = Arrays.asList(
-            new BlockEntry("#ffd1bd", "minecraft:iron_ore", "minecraft:deepslate_iron_ore"),
-            new BlockEntry("#eb5e34", "minecraft:copper_ore", "minecraft:deepslate_copper_ore"),
-            new BlockEntry("#505050", "minecraft:coal_ore", "minecraft:deepslate_coal_ore"),
-            new BlockEntry("#fff52e", "minecraft:gold_ore", "minecraft:deepslate_gold_ore", "minecraft:nether_gold_ore"),
-            new BlockEntry("#2ee0ff", "minecraft:diamond_ore", "minecraft:deepslate_diamond_ore"),
-            new BlockEntry("#2eff35", "minecraft:emerald_ore", "minecraft:deepslate_emerald_ore"),
-            new BlockEntry("#312eff", "minecraft:lapis_ore", "minecraft:deepslate_lapis_ore"),
-            new BlockEntry("#ff2e2e", "minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"),
-            new BlockEntry("#ffffff", "minecraft:nether_quartz_ore")
-    );
-    @AConfigEntry(environment = ConfigEnvironment.CLIENT)
+    private static int effectRadius = 16;
+    public static int chunkRadius = 1;
+    public static int blockRadiusMax = (int) Math.pow(16, 2);
+    public static int blockRadiusMin = (int) Math.pow(15, 2);
     public static boolean blockTransitions = true;
+    public static HashMap<Block, Integer> parsedBlockHighlightColors = new HashMap<>();
 
-    @AConfigExclude public static HashMap<Block, Integer> parsedBlockHighlightColors = new HashMap<>();
-    @AConfigExclude public static int chunkRadius = 1;
-    @AConfigExclude public static int blockRadiusMax = (int) Math.pow(16, 2);
-    @AConfigExclude public static int blockRadiusMin = (int) Math.pow(15, 2);
+    public static final File CONFIG_FILE = new File("config", "spelunker.hjson");
 
-    @AConfigListener
-    public void reload() {
-        chunkRadius = (int) Math.ceil(effectRadius / 16f);
-        blockRadiusMax = (int) Math.pow(effectRadius, 2);
-        blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
+    public static void createDefaultConfigIfNeeded() throws IOException {
+        if(CONFIG_FILE.exists())
+            return;
+        File parent = CONFIG_FILE.getParentFile();
+        parent.mkdirs();
 
-        parsedBlockHighlightColors.clear();
-        for (SpelunkerConfig.BlockEntry blockEntry : blockHighlightColors) {
-            int color = HexFormat.fromHexDigits(blockEntry.highlightColor.substring(1));
-            for (String blockId : blockEntry.blockIds) {
+        InputStream in = SpelunkerConfig.class.getResourceAsStream("/default_config.hjson");
+        if(in == null)
+            throw new FileNotFoundException();
+        FileOutputStream out = new FileOutputStream(CONFIG_FILE);
+        in.transferTo(out);
+        in.close();
+        out.close();
+    }
+
+    public static void loadConfig() throws IOException {
+        InputStream in = new FileInputStream(CONFIG_FILE);
+        HjsonObject obj = HjsonSerializer.INSTANCE.readValue(in).asObject();
+        in.close();
+
+        serverValidating = obj.getBoolean("server-validating", true);
+        effectRadius = obj.getInt("effect-radius", 16);
+        parseEffectRadius();
+        blockTransitions = obj.getBoolean("block-transitions", true);
+        HjsonList blockHighlightColorList = obj.get("block-highlight-colors").asList();
+        for (HjsonValue value : blockHighlightColorList) {
+            HjsonObject blockObj = value.asObject();
+            String color = blockObj.getString("highlightColor", "#ffffff");
+            List<String> blockIds = new ArrayList<>();
+            HjsonList blockIdList = blockObj.get("blockIds").asList();
+            for (HjsonValue blockIdValue : blockIdList)
+                blockIds.add(blockIdValue.asString());
+
+            int c = TextColor.parse(color).getRgb();
+            for (String blockId : blockIds) {
                 Block block = Registry.BLOCK.get(new Identifier(blockId));
-                parsedBlockHighlightColors.put(block, color);
+                parsedBlockHighlightColors.put(block, c);
             }
         }
     }
 
-    public static class BlockEntry {
-        public List<String> blockIds;
-        public String highlightColor;
-
-        public BlockEntry() {
+    public static void writePacket(PacketByteBuf buf) {
+        buf.writeBoolean(serverValidating);
+        buf.writeVarInt(effectRadius);
+        buf.writeVarInt(parsedBlockHighlightColors.size());
+        for (Map.Entry<Block, Integer> entry : parsedBlockHighlightColors.entrySet()) {
+            Identifier id = Registry.BLOCK.getId(entry.getKey());
+            buf.writeIdentifier(id);
+            buf.writeInt(entry.getValue());
         }
+    }
 
-        public BlockEntry(String highlightColor, String... blockIds) {
-            this.blockIds = Arrays.asList(blockIds);
-            this.highlightColor = highlightColor;
+    public static void readPacket(PacketByteBuf buf) {
+        serverValidating = buf.readBoolean();
+        effectRadius = buf.readVarInt();
+        parseEffectRadius();
+
+        parsedBlockHighlightColors.clear();
+        int c = buf.readVarInt();
+        for (int i = 0; i < c; i++) {
+            Block block = Registry.BLOCK.get(buf.readIdentifier());
+            int color = buf.readInt();
+            parsedBlockHighlightColors.put(block, color);
         }
+    }
+
+    private static void parseEffectRadius() {
+        chunkRadius = (int) Math.ceil(effectRadius / 16f);
+        blockRadiusMax = (int) Math.pow(effectRadius, 2);
+        blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
     }
 }

@@ -1,5 +1,6 @@
 package de.leximon.spelunker;
 
+import de.leximon.spelunker.core.SpelunkerConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.loot.v1.FabricLootPoolBuilder;
 import net.fabricmc.fabric.api.loot.v1.event.LootTableLoadingCallback;
@@ -16,13 +17,15 @@ import net.minecraft.util.registry.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 public class SpelunkerMod implements ModInitializer {
 	public static final String MODID = "spelunker";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
 	public static final Identifier MINESHAFT_LOOT_TABLE = new Identifier("chests/abandoned_mineshaft");
 
 	public static final Identifier PACKET_ORE_CHUNKS = identifier("ore_chunks");
-	public static final Identifier PACKET_ORE_CHUNK = identifier("ore_chunk");
+	public static final Identifier PACKET_CONFIG = identifier("config");
 
 	public static StatusEffect STATUS_EFFECT_SPELUNKER;
 	public static Potion SPELUNKER_POTION;
@@ -33,6 +36,14 @@ public class SpelunkerMod implements ModInitializer {
 		STATUS_EFFECT_SPELUNKER = Registry.register(Registry.STATUS_EFFECT, identifier("spelunker"), new SpelunkerStatusEffect());
 		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90)));
 		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90 * 2)));
+
+		// load config
+		try {
+			SpelunkerConfig.createDefaultConfigIfNeeded();
+			SpelunkerConfig.loadConfig();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		// add potion to mineshafts
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {

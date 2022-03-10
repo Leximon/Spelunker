@@ -1,5 +1,6 @@
 package de.leximon.spelunker;
 
+import de.leximon.spelunker.core.SpelunkerConfig;
 import de.leximon.spelunker.core.SpelunkerEffectManager;
 import de.leximon.spelunker.core.SpelunkerEffectRenderer;
 import de.leximon.spelunker.mixin.WorldRendererAccessor;
@@ -7,6 +8,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.server.PlayerManager;
 
 public class SpelunkerModClient implements ClientModInitializer {
 
@@ -30,8 +32,7 @@ public class SpelunkerModClient implements ClientModInitializer {
             isAlreadyRenderingOutline = false;
         });
 
-        ClientPlayNetworking.registerGlobalReceiver(SpelunkerMod.PACKET_ORE_CHUNKS, (client, handler, buf, sender) -> {
-            SpelunkerEffectManager.readPacket(spelunkerEffectRenderer, buf);
-        });
+        ClientPlayNetworking.registerGlobalReceiver(SpelunkerMod.PACKET_ORE_CHUNKS, (client, handler, buf, sender) -> SpelunkerEffectManager.readPacket(spelunkerEffectRenderer, buf));
+        ClientPlayNetworking.registerGlobalReceiver(SpelunkerMod.PACKET_CONFIG, (client, handler, buf, sender) -> SpelunkerConfig.readPacket(buf));
     }
 }
