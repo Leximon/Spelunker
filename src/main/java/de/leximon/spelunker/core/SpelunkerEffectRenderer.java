@@ -84,7 +84,7 @@ public class SpelunkerEffectRenderer {
         }
     }
 
-    public void addChunks(World world, HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks) {
+    public void addChunks(int bottomSectionCord, HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks) {
         synchronized (this) {
             for (Map.Entry<Vec3i, Set<Pair<Vec3i, BlockState>>> entry : chunks.entrySet()) {
                 Vec3i pos = entry.getKey();
@@ -94,7 +94,7 @@ public class SpelunkerEffectRenderer {
                             var p = pair.getLeft();
                             pair.setLeft(new Vec3i(
                                     ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX(),
-                                    ChunkSectionPos.getBlockCoord(world.sectionIndexToCoord(pos.getY())) + p.getY(),
+                                    ChunkSectionPos.getBlockCoord(pos.getY() + bottomSectionCord) + p.getY(),
                                     ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ()
                             ));
                         }).collect(Collectors.toSet())));

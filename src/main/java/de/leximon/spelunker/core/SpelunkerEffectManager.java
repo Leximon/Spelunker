@@ -124,6 +124,7 @@ public class SpelunkerEffectManager {
                 buf.writeVarInt(Registry.BLOCK.getRawId(ore.getRight().getBlock()));
             }
         }
+        buf.writeVarInt(world.getBottomSectionCoord());
 
         return buf;
     }
@@ -160,7 +161,9 @@ public class SpelunkerEffectManager {
             }
             chunks.put(pos, ores);
         }
-        renderer.addChunks(MinecraftClient.getInstance().world, chunks);
+
+        int bottomSectionCord = buf.readVarInt();
+        renderer.addChunks(bottomSectionCord, chunks);
     }
 
 }
