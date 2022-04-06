@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -71,7 +72,9 @@ public abstract class WorldMixin implements IWorld {
 
     @Environment(EnvType.CLIENT)
     private void spelunkerUpdateClient(World world, HashSet<Vec3i> chunks) {
-        if (!SpelunkerConfig.serverValidating || MinecraftClient.getInstance().isInSingleplayer())
+        MinecraftClient client = MinecraftClient.getInstance();
+        if ((!SpelunkerConfig.serverValidating || client.isInSingleplayer()) && client.player != null && client.player.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
             SpelunkerModClient.spelunkerEffectRenderer.updateChunks(world, chunks, chunks);
+        }
     }
 }
