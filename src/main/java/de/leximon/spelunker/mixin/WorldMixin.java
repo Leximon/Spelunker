@@ -51,7 +51,9 @@ public abstract class WorldMixin implements IWorld {
                 ((World) (Object) this).sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY())),
                 ChunkSectionPos.getSectionCoord(pos.getZ())
         );
-        dirtySpelunkerChunks.add(cPos);
+        synchronized (dirtySpelunkerChunks) {
+            dirtySpelunkerChunks.add(cPos);
+        }
     }
 
     @Override
@@ -60,8 +62,10 @@ public abstract class WorldMixin implements IWorld {
             return;
 
         if (isClient()) {
-            spelunkerUpdateClient((World) (Object) this, dirtySpelunkerChunks);
-            dirtySpelunkerChunks.clear();
+            synchronized (dirtySpelunkerChunks) {
+                spelunkerUpdateClient((World) (Object) this, dirtySpelunkerChunks);
+                dirtySpelunkerChunks.clear();
+            }
             return;
         }
 
@@ -75,8 +79,11 @@ public abstract class WorldMixin implements IWorld {
             return;
 
         // send to clients
-        PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket((World) (Object) this, dirtySpelunkerChunks, dirtySpelunkerChunks);
-        dirtySpelunkerChunks.clear();
+        PacketByteBuf buf;
+        synchronized (dirtySpelunkerChunks) {
+            buf = SpelunkerEffectManager.findOresAndWritePacket((World) (Object) this, dirtySpelunkerChunks, dirtySpelunkerChunks);
+            dirtySpelunkerChunks.clear();
+        }
         for (ServerPlayerEntity p : players) {
             if (p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
                 ServerPlayNetworking.send(p, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
