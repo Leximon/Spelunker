@@ -20,6 +20,8 @@ import net.minecraft.loot.condition.MatchToolLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.SetPotionLootFunction;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
+import net.minecraft.loot.provider.number.LootNumberProvider;
+import net.minecraft.loot.provider.number.UniformLootNumberProvider;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.Potions;
 import net.minecraft.predicate.NumberRange;
@@ -70,18 +72,22 @@ public class SpelunkerMod implements ModInitializer {
 		// add potion to mineshafts
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
 			if(MINESHAFT_LOOT_TABLE.equals(id)) {
+				LootNumberProvider rollProvider;
+				if(SpelunkerConfig.lootTableRolls.length == 1)
+					rollProvider = ConstantLootNumberProvider.create(SpelunkerConfig.lootTableRolls[0]);
+				else rollProvider = UniformLootNumberProvider.create(SpelunkerConfig.lootTableRolls[0], SpelunkerConfig.lootTableRolls[1]);
 				table.pool(FabricLootPoolBuilder.builder()
-						.rolls(ConstantLootNumberProvider.create(1))
+						.rolls(rollProvider)
 						.with(ItemEntry.builder(Items.POTION)
 								.apply(() -> SetPotionLootFunction.builder(SPELUNKER_POTION).build())
-								.weight(10)
+								.weight(SpelunkerConfig.shortPotionChance)
 						)
 						.with(ItemEntry.builder(Items.POTION)
 								.apply(() -> SetPotionLootFunction.builder(LONG_SPELUNKER_POTION).build())
-								.weight(25)
+								.weight(SpelunkerConfig.longPotionChance)
 						)
 						.with(ItemEntry.builder(Items.AIR)
-								.weight(65)
+								.weight(100 - (SpelunkerConfig.shortPotionChance + SpelunkerConfig.longPotionChance))
 						)
 				);
 			}
