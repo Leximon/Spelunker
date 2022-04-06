@@ -13,12 +13,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,6 +35,10 @@ public abstract class WorldMixin implements IWorld {
 
     @Shadow public abstract boolean isClient();
 
+    @Shadow @Nullable public abstract MinecraftServer getServer();
+
+    private final HashSet<Vec3i> dirtySpelunkerChunks = new HashSet<>();
+
     @Inject(method = "onBlockChanged", at = @At("HEAD"))
     private void onBlockChangedInject(BlockPos pos, BlockState oldBlock, BlockState newBlock, CallbackInfo ci) {
         spelunkerUpdateBlock(pos, oldBlock, newBlock);
@@ -45,26 +51,33 @@ public abstract class WorldMixin implements IWorld {
                 ((World) (Object) this).sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY())),
                 ChunkSectionPos.getSectionCoord(pos.getZ())
         );
-        HashSet<Vec3i> chunks = new HashSet<>();
-        chunks.add(cPos);
+        dirtySpelunkerChunks.add(cPos);
+    }
+
+    @Override
+    public void spelunkerUpdateChunks() {
+        if(dirtySpelunkerChunks.isEmpty())
+            return;
 
         if (isClient()) {
-            spelunkerUpdateClient((World) (Object) this, chunks);
+            spelunkerUpdateClient((World) (Object) this, dirtySpelunkerChunks);
+            dirtySpelunkerChunks.clear();
             return;
         }
 
         if (!SpelunkerConfig.serverValidating)
             return;
 
-        Collection<ServerPlayerEntity> players = PlayerLookup.tracking((ServerWorld) (Object) this, pos).stream()
+        Collection<ServerPlayerEntity> players = PlayerLookup.all(getServer()).stream()
                 .filter(p -> p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
                 .toList();
         if (players.size() == 0)
             return;
 
         // send to clients
-        PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket((World) (Object) this, chunks, chunks);
-        for (ServerPlayerEntity p : PlayerLookup.tracking((ServerWorld) (Object) this, pos)) {
+        PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket((World) (Object) this, dirtySpelunkerChunks, dirtySpelunkerChunks);
+        dirtySpelunkerChunks.clear();
+        for (ServerPlayerEntity p : players) {
             if (p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
                 ServerPlayNetworking.send(p, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
         }
