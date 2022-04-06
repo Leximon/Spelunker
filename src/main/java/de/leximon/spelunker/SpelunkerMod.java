@@ -63,7 +63,7 @@ public class SpelunkerMod implements ModInitializer {
 
 		// load config
 		try {
-			SpelunkerConfig.createDefaultConfigIfNeeded();
+			SpelunkerConfig.createDefaultConfig();
 			SpelunkerConfig.loadConfig();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -73,9 +73,9 @@ public class SpelunkerMod implements ModInitializer {
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
 			if(MINESHAFT_LOOT_TABLE.equals(id)) {
 				LootNumberProvider rollProvider;
-				if(SpelunkerConfig.lootTableRolls.length == 1)
-					rollProvider = ConstantLootNumberProvider.create(SpelunkerConfig.lootTableRolls[0]);
-				else rollProvider = UniformLootNumberProvider.create(SpelunkerConfig.lootTableRolls[0], SpelunkerConfig.lootTableRolls[1]);
+				if(SpelunkerConfig.minRolls == SpelunkerConfig.maxRolls)
+					rollProvider = ConstantLootNumberProvider.create(SpelunkerConfig.minRolls);
+				else rollProvider = UniformLootNumberProvider.create(SpelunkerConfig.minRolls, SpelunkerConfig.maxRolls);
 				table.pool(FabricLootPoolBuilder.builder()
 						.rolls(rollProvider)
 						.with(ItemEntry.builder(Items.POTION)
