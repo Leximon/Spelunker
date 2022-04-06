@@ -3,11 +3,26 @@
 	// recommended if the server has an anti-xray mod
 	// default: true
 	server-validating: true
+
+	// The chance how likely it is to find a short or long potion in a chest
+	// default: 10; 25
+	short-potion-chance: 10
+	long-potion-chance: 25
+
+	// Defines how often the game will try to generate a potion.
+	// Higher values lead to the generation of multiple potions in the same chest.
+	// Max two values. If two values are specified a random one between those two will be chosen each time loot is generated.
+	// default: [1]
+	loottable-rolls: [
+	    1
+	]
+
 	// How many blocks the effect should range
 	// a higher value than 32 is not recommended
 	// default: 16
 	// Must be greater or equal to 1
 	effect-radius: 16
+
 	// default: true
     block-transitions: true
 	block-highlight-colors: [

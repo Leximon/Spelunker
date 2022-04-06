@@ -1,5 +1,6 @@
 package de.leximon.spelunker.core;
 
+import de.leximon.spelunker.SpelunkerMod;
 import de.siphalor.tweed4.data.hjson.HjsonList;
 import de.siphalor.tweed4.data.hjson.HjsonObject;
 import de.siphalor.tweed4.data.hjson.HjsonSerializer;
@@ -26,10 +27,14 @@ public class SpelunkerConfig {
     public static boolean serverValidating = true;
     private static int effectRadius = 16;
     public static int chunkRadius = 1;
-    public static int blockRadiusMax = (int) Math.pow(16, 2);
-    public static int blockRadiusMin = (int) Math.pow(15, 2);
+    public static int blockRadiusMax = 16 * 16;
+    public static int blockRadiusMin = 15 * 15;
     public static boolean blockTransitions = true;
     public static HashMap<Block, Integer> parsedBlockHighlightColors = new HashMap<>();
+
+    public static int shortPotionChance = 10;
+    public static int longPotionChance = 25;
+    public static int[] lootTableRolls = new int[2];
 
     public static final File CONFIG_FILE = new File("config", "spelunker.hjson");
 
@@ -72,6 +77,21 @@ public class SpelunkerConfig {
                 parsedBlockHighlightColors.put(block, c);
             }
         }
+
+        HjsonList lootTableRollsArray = obj.get("loottable-rolls").asList();
+        if(lootTableRollsArray.size() > 2 || lootTableRollsArray.size() == 0)
+            throw new UnsupportedOperationException("LootTable-Rolls can only have one or two values!");
+        for (int i = 0; i < lootTableRollsArray.size(); i++)
+            lootTableRolls[i] = lootTableRollsArray.get(i).asInt();
+
+        shortPotionChance = Math.max(obj.getInt("short-potion-chance", 10), 0);
+        longPotionChance = Math.max(obj.getInt("long-potion-chance", 25), 0);
+        if(shortPotionChance + longPotionChance >= 100) {
+            SpelunkerMod.LOGGER.warn("Short and long potion chances together are greater than 100%.");
+            longPotionChance = 100 - shortPotionChance;
+            SpelunkerMod.LOGGER.warn("Limited long potion chance to: " + longPotionChance);
+        } else if(shortPotionChance + longPotionChance == 0)
+            SpelunkerMod.LOGGER.warn("The Spelunker effect cannot be obtained in survival because the potion has 0 chance of generating.");
     }
 
     public static void writePacket(PacketByteBuf buf) {
