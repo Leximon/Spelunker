@@ -4,6 +4,7 @@
   "package": "de.leximon.spelunker.mixin",
   "compatibilityLevel": "JAVA_16",
   "mixins": [
+    "BrewingRecipeRegistryAccessor",
     "PlayerEntityMixin",
     "PlayerManagerMixin",
     "ThreadedAnvilChunkStorageAccessor",
@@ -15,6 +16,7 @@
   ],
   "client": [
     "ClientPlayerEntityMixin",
+    "ClientWorldMixin",
     "WorldRendererAccessor",
     "WorldRendererMixin"
   ],

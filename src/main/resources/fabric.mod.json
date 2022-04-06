@@ -6,8 +6,11 @@
   "name": "Spelunker",
   "description": "Adds the spelunker potion from Terraria",
   "authors": [
-    "Leximon",
-    "Loki0500 (Icon Texture)"
+    "Leximon"
+  ],
+  "contributors": [
+    "Loki0500 (Icon Texture)",
+    "Smato"
   ],
   "contact": {
     "sources": "https://github.com/Lex305/Spelunker"

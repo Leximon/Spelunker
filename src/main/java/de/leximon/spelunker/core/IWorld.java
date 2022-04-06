@@ -8,4 +8,6 @@ public interface IWorld {
 
     void spelunkerUpdateBlock(BlockPos pos, BlockState oldBlock, BlockState newBlock);
 
+    void spelunkerUpdateChunks();
+
 }
