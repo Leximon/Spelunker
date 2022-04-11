@@ -75,8 +75,8 @@ public class SpelunkerConfig {
         }
         if(!obj.hasBoolean("allow-potion-brewing")) {
             obj.set("allow-potion-brewing", allowPotionBrewing).setComment("""
-                    Sets whether or not players can brew the potion.
-                    If this is disabled amethyst dust will also be unobtainable in survival.
+                    Sets whether or not players can brew the potion
+                    If this is disabled amethyst dust will also be unobtainable in survival
                     default: true
                     """);
             rewrite = true;
