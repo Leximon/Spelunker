@@ -57,9 +57,12 @@ public class SpelunkerMod implements ModInitializer {
 		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90)));
 		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90 * 2)));
 
-		BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.NIGHT_VISION, AMETHYST_DUST, SPELUNKER_POTION);
-		BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.LONG_NIGHT_VISION, AMETHYST_DUST, LONG_SPELUNKER_POTION);
-		BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(SPELUNKER_POTION, Items.REDSTONE, LONG_SPELUNKER_POTION);
+		// register recipes
+		if(SpelunkerConfig.allowPotionBrewing) {
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.NIGHT_VISION, AMETHYST_DUST, SPELUNKER_POTION);
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.LONG_NIGHT_VISION, AMETHYST_DUST, LONG_SPELUNKER_POTION);
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(SPELUNKER_POTION, Items.REDSTONE, LONG_SPELUNKER_POTION);
+		}
 
 		// load config
 		try {
@@ -69,29 +72,31 @@ public class SpelunkerMod implements ModInitializer {
 			e.printStackTrace();
 		}
 
-		// add potion to mineshafts
+		// add potion to loot tables
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
-			if(MINESHAFT_LOOT_TABLE.equals(id)) {
-				LootNumberProvider rollProvider;
-				if(SpelunkerConfig.minRolls == SpelunkerConfig.maxRolls)
-					rollProvider = ConstantLootNumberProvider.create(SpelunkerConfig.minRolls);
-				else rollProvider = UniformLootNumberProvider.create(SpelunkerConfig.minRolls, SpelunkerConfig.maxRolls);
-				table.pool(FabricLootPoolBuilder.builder()
-						.rolls(rollProvider)
-						.with(ItemEntry.builder(Items.POTION)
-								.apply(() -> SetPotionLootFunction.builder(SPELUNKER_POTION).build())
-								.weight(SpelunkerConfig.shortPotionChance)
-						)
-						.with(ItemEntry.builder(Items.POTION)
-								.apply(() -> SetPotionLootFunction.builder(LONG_SPELUNKER_POTION).build())
-								.weight(SpelunkerConfig.longPotionChance)
-						)
-						.with(ItemEntry.builder(Items.AIR)
-								.weight(100 - (SpelunkerConfig.shortPotionChance + SpelunkerConfig.longPotionChance))
-						)
-				);
+			for (SpelunkerConfig.LootTableEntry entry : SpelunkerConfig.lootTables) {
+				if(entry.id().equals(id)) {
+					LootNumberProvider rollProvider;
+					if(entry.min() == entry.max())
+						rollProvider = ConstantLootNumberProvider.create(entry.min());
+					else rollProvider = UniformLootNumberProvider.create(entry.min(), entry.max());
+					table.pool(FabricLootPoolBuilder.builder()
+							.rolls(rollProvider)
+							.with(ItemEntry.builder(Items.POTION)
+									.apply(() -> SetPotionLootFunction.builder(SPELUNKER_POTION).build())
+									.weight(entry.shortChance())
+							)
+							.with(ItemEntry.builder(Items.POTION)
+									.apply(() -> SetPotionLootFunction.builder(LONG_SPELUNKER_POTION).build())
+									.weight(entry.longChance())
+							)
+							.with(ItemEntry.builder(Items.AIR)
+									.weight(100 - (entry.shortChance() + entry.longChance()))
+							)
+					);
+				}
 			}
-			if(AMETHYST_CLUSTER_LOOT_TABLE.equals(id)) {
+			if(AMETHYST_CLUSTER_LOOT_TABLE.equals(id) && SpelunkerConfig.allowPotionBrewing) {
 				table.pool(FabricLootPoolBuilder.builder()
 						.rolls(ConstantLootNumberProvider.create(1))
 								.withCondition(MatchToolLootCondition.builder(ItemPredicate.Builder.create()
@@ -115,7 +120,6 @@ public class SpelunkerMod implements ModInitializer {
 	}
 
 	private static class SpelunkerStatusEffect extends StatusEffect {
-
 		public SpelunkerStatusEffect() {
 			super(StatusEffectCategory.BENEFICIAL, 0xffe32e);
 		}
