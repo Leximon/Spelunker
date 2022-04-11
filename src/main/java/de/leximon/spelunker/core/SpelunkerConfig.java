@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class SpelunkerConfig {
 
@@ -161,8 +162,11 @@ public class SpelunkerConfig {
 
             int c = TextColor.parse(color).getRgb();
             for (String blockId : blockIds) {
-                Block block = Registry.BLOCK.get(new Identifier(blockId));
-                parsedBlockHighlightColors.put(block, c);
+                Optional<Block> optBlock = Registry.BLOCK.getOrEmpty(new Identifier(blockId));
+                if(optBlock.isEmpty())
+                    SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'", blockId);
+                else
+                    parsedBlockHighlightColors.put(optBlock.get(), c);
             }
         }
 

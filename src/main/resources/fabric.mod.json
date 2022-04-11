@@ -9,12 +9,13 @@
     "Leximon"
   ],
   "contributors": [
+    "Loki0500 (Textures)",
     "RasmusTV",
-    "Loki0500 (Icon Texture)",
     "Smato"
   ],
   "contact": {
-    "sources": "https://github.com/Lex305/Spelunker"
+    "sources": "https://github.com/Lex305/Spelunker",
+    "issues": "https://github.com/Leximon/Spelunker/issues",
   },
 
   "license": "MIT",

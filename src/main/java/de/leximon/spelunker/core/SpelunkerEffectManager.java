@@ -5,7 +5,6 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
@@ -81,20 +80,6 @@ public class SpelunkerEffectManager {
             }
         }
         return sections;
-    }
-
-    public static PacketByteBuf writePacket(World world, Vec3i pos, boolean remove) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeBoolean(remove);
-
-        buf.writeVarInt(pos.getX());
-        buf.writeVarInt(pos.getY());
-        buf.writeVarInt(pos.getZ());
-
-        if(!remove) {
-
-        }
-        return buf;
     }
 
     public static PacketByteBuf findOresAndWritePacket(World world, HashSet<Vec3i> remove, HashSet<Vec3i> add) {
