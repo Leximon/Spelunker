@@ -96,25 +96,39 @@ public class SpelunkerConfig {
             rewrite = true;
         }
         if (!obj.hasList("loot-tables")) {
+            int min = 1, max = 1;
+            int shortPotionChance = 10, longPotionChance = 25;
+            if(obj.hasObject("loot-table")) { // load old data structure from version 1.3.0
+                HjsonObject lObj = obj.get("loot-table").asObject();
+                if(lObj.hasObject("rolls")) {
+                    HjsonObject rObj = lObj.get("rolls").asObject();
+                    min = rObj.getInt("min", 1);
+                    max = rObj.getInt("max", 1);
+                }
+                shortPotionChance = lObj.getInt("short-potion-chance", 10);
+                longPotionChance = lObj.getInt("long-potion-chance", 25);
+                obj.remove("loot-table");
+            }
+
             HjsonList lootTableList = obj.addList("loot-tables");
             HjsonObject eObj = lootTableList.addObject(lootTableList.size());
             eObj.set("targetId", "chests/abandoned_mineshaft").setComment("""
                     The loot table where the potion should be able to generate in
                     default: chests/abandoned_mineshaft
                     """);
-            eObj.set("min", 1).setComment("""
+            eObj.set("min", min).setComment("""
                     Minimum rolls
                     default: 1
                     """);
-            eObj.set("max", 1).setComment("""
+            eObj.set("max", max).setComment("""
                     Maximum rolls
                     default: 1
                     """);
-            eObj.set("short-potion-chance", 10).setComment("""
+            eObj.set("short-potion-chance", shortPotionChance).setComment("""
                     Modifies how likely it is that a short-potion generates in this loot table
                     default: 10
                     """);
-            eObj.set("long-potion-chance", 25).setComment("""
+            eObj.set("long-potion-chance", longPotionChance).setComment("""
                     Modifies how likely it is that a long-potion generates in this loot table
                     default: 25
                     """);;
