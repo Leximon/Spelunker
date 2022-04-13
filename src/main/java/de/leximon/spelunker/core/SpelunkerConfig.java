@@ -5,6 +5,14 @@ import de.siphalor.tweed4.data.hjson.HjsonList;
 import de.siphalor.tweed4.data.hjson.HjsonObject;
 import de.siphalor.tweed4.data.hjson.HjsonSerializer;
 import de.siphalor.tweed4.data.hjson.HjsonValue;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntHash;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
@@ -50,7 +58,7 @@ public class SpelunkerConfig {
     public static int blockRadiusMax = 16 * 16;
     public static int blockRadiusMin = 15 * 15;
     public static boolean blockTransitions = true;
-    public static HashMap<Block, Integer> parsedBlockHighlightColors = new HashMap<>();
+    public static Object2IntMap<Block> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
 
     public static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "spelunker.hjson");
 
@@ -149,7 +157,6 @@ public class SpelunkerConfig {
 
         if(rewrite) {
             CONFIG_FILE.getParentFile().mkdir();
-
             FileOutputStream out = new FileOutputStream(CONFIG_FILE);
             HjsonSerializer.INSTANCE.writeValue(out, obj);
             out.close();
@@ -206,10 +213,9 @@ public class SpelunkerConfig {
         buf.writeBoolean(serverValidating);
         buf.writeVarInt(effectRadius);
         buf.writeVarInt(parsedBlockHighlightColors.size());
-        for (Map.Entry<Block, Integer> entry : parsedBlockHighlightColors.entrySet()) {
-            Identifier id = Registry.BLOCK.getId(entry.getKey());
-            buf.writeIdentifier(id);
-            buf.writeInt(entry.getValue());
+        for (Object2IntMap.Entry<Block> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
+            buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
+            buf.writeInt(entry.getIntValue());
         }
     }
 
@@ -220,11 +226,8 @@ public class SpelunkerConfig {
 
         parsedBlockHighlightColors.clear();
         int c = buf.readVarInt();
-        for (int i = 0; i < c; i++) {
-            Block block = Registry.BLOCK.get(buf.readIdentifier());
-            int color = buf.readInt();
-            parsedBlockHighlightColors.put(block, color);
-        }
+        for (int i = 0; i < c; i++)
+            parsedBlockHighlightColors.put(Registry.BLOCK.get(buf.readVarInt()), buf.readInt());
     }
 
     private static void parseEffectRadius() {

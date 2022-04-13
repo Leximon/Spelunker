@@ -18,7 +18,8 @@
     "ClientPlayerEntityMixin",
     "ClientWorldMixin",
     "WorldRendererAccessor",
-    "WorldRendererMixin"
+    "WorldRendererMixin",
+    "ClientChunkManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
