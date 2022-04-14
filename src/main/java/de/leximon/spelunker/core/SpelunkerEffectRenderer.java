@@ -11,6 +11,7 @@ import net.minecraft.client.render.OutlineVertexConsumerProvider;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
@@ -39,10 +40,34 @@ public class SpelunkerEffectRenderer {
     private boolean enabled = false;
 
     public void render(MatrixStack matrices, Camera camera, OutlineVertexConsumerProvider vertexConsumers) {
-        Vec3d pos = camera.getPos();
+        Vec3d cameraPos = camera.getPos();
         matrices.push();
-        matrices.translate(-pos.x, -pos.y, -pos.z);
-        render(matrices, pos, vertexConsumers);
+        matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        synchronized (cache) {
+            for (Long2ObjectMap.Entry<List<Pair<BlockPos, Block>>> entry : cache.long2ObjectEntrySet()) {
+                for (Pair<BlockPos, Block> pair : entry.getValue()) {
+                    Vec3i pos = pair.getLeft();
+                    double squareDistance = toSquaredDistanceFromCenter(pos, cameraPos.getX(), cameraPos.getY(), cameraPos.getZ());
+                    if (squareDistance > SpelunkerConfig.blockRadiusMax)
+                        continue;
+                    float fade;
+                    if (SpelunkerConfig.blockTransitions) {
+                        fade = Math.min(1 - (float) ((squareDistance - SpelunkerConfig.blockRadiusMin) / (SpelunkerConfig.blockRadiusMax - SpelunkerConfig.blockRadiusMin)), 1);
+                        fade = easeOutCirc(fade);
+                    } else fade = 1;
+                    matrices.push();
+                    matrices.translate(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+                    matrices.scale(fade, fade, fade);
+                    {
+                        matrices.push();
+                        matrices.translate(-0.5, -0.5, -0.5);
+                        CUBE.renderCuboid(matrices.peek(), setOutlineColor(pair.getRight(), vertexConsumers), 0, OverlayTexture.DEFAULT_UV, 0, 0, 0, 0);
+                        matrices.pop();
+                    }
+                    matrices.pop();
+                }
+            }
+        }
         matrices.pop();
     }
 
@@ -67,12 +92,14 @@ public class SpelunkerEffectRenderer {
             for (Long2ObjectMap.Entry<List<Pair<BlockPos, Block>>> entry : add.long2ObjectEntrySet())
                 for (Pair<BlockPos, Block> pair : entry.getValue()) {
                     List<Pair<BlockPos, Block>> list = cache.get(entry.getLongKey());
-                    if(list == null) {
+                    if (list == null) {
                         list = new ArrayList<>();
                         list.add(pair);
                         cache.put(entry.getLongKey(), list);
                     } else list.add(pair);
                 }
+        }
+        synchronized (cache) {
             for (long chunkPos : chunks)
                 cache.remove(chunkPos);
             for (BlockPos pos : remove) {
@@ -86,36 +113,6 @@ public class SpelunkerEffectRenderer {
 
     private static float easeOutCirc(float x) {
         return (float) Math.sqrt(1 - Math.pow(x - 1, 2));
-    }
-
-    public void render(MatrixStack matrices, Vec3d playerPos, OutlineVertexConsumerProvider vertexConsumers) {
-        synchronized (cache) {
-            for (Long2ObjectMap.Entry<List<Pair<BlockPos, Block>>> entry : cache.long2ObjectEntrySet()) {
-                for (Pair<BlockPos, Block> pair : entry.getValue()) {
-                    Vec3i pos = pair.getLeft();
-                    double squareDistance = toSquaredDistanceFromCenter(pos, playerPos.getX(), playerPos.getY(), playerPos.getZ());
-                    if (squareDistance > SpelunkerConfig.blockRadiusMax)
-                        continue;
-                    float fade;
-                    if (SpelunkerConfig.blockTransitions) {
-                        fade = Math.min(1 - (float) ((squareDistance - SpelunkerConfig.blockRadiusMin) / (SpelunkerConfig.blockRadiusMax - SpelunkerConfig.blockRadiusMin)), 1);
-                        fade = easeOutCirc(fade);
-                    } else {
-                        fade = 1;
-                    }
-                    matrices.push();
-                    matrices.translate(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-                    matrices.scale(fade, fade, fade);
-                    {
-                        matrices.push();
-                        matrices.translate(-0.5, -0.5, -0.5);
-                        CUBE.renderCuboid(matrices.peek(), setOutlineColor(pair.getRight(), vertexConsumers), 0, OverlayTexture.DEFAULT_UV, 0, 0, 0, 0);
-                        matrices.pop();
-                    }
-                    matrices.pop();
-                }
-            }
-        }
     }
 
     private VertexConsumer setOutlineColor(Block block, OutlineVertexConsumerProvider vertexConsumers) {
