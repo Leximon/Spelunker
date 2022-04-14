@@ -1,5 +1,6 @@
 package de.leximon.spelunker.core;
 
+import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -11,11 +12,16 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.world.ChunkHolder;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,12 +37,21 @@ public class SpelunkerEffectManager {
     public static Long2ObjectMap<List<Pair<BlockPos, Block>>> getNewBlocksFromChunks(World world, List<ChunkSectionPos> chunkSections) {
         Long2ObjectMap<List<Pair<BlockPos, Block>>> dirty = new Long2ObjectArrayMap<>();
         for (ChunkSectionPos section : chunkSections) {
+            Chunk chunk;
+            if (world instanceof ServerWorld sw) {
+                ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage).spelunkerGetChunkHolder(ChunkPos.toLong(section.getX(), section.getZ()));
+                if (chunkHolder != null) {
+                    chunk = chunkHolder.getWorldChunk();
+                } else chunk = world.getChunkManager().getWorldChunk(section.getX(), section.getZ(), true);
+            } else chunk = world.getChunk(section.getX(), section.getZ(), ChunkStatus.FULL, false);
+            if(chunk == null)
+                continue;
             List<Pair<BlockPos, Block>> blocks = new ArrayList<>();
             for(int x = section.getMinX(); x <= section.getMaxX(); x++)
                 for(int y = section.getMinY(); y <= section.getMaxY(); y++)
                     for(int z = section.getMinZ(); z <= section.getMaxZ(); z++) {
                         BlockPos pos = new BlockPos(x, y, z);
-                        Block block = world.getBlockState(pos).getBlock();
+                        Block block = chunk.getBlockState(pos).getBlock();
                         if(SpelunkerEffectManager.isOreBlock(block))
                             blocks.add(new Pair<>(pos, block));
                     }

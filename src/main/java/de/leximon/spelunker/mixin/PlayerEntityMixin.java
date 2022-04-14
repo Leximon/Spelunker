@@ -30,7 +30,7 @@ import java.util.List;
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity implements IPlayerEntity {
 
-    private ChunkSectionPos lastChunkPos = ChunkSectionPos.from(this);
+    private long lastChunkPos = ChunkSectionPos.from(this).asLong();
     private long[] chunkCache = new long[0];
 
     private boolean forceOreChunkUpdate = true;
@@ -52,8 +52,9 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IPlayerE
                 return;
 
         ChunkSectionPos currentChunkPos = ChunkSectionPos.from(this);
+        long chunkLong;
         // update if player crosses chunk border
-        if (lastChunkPos.asLong() != currentChunkPos.asLong() || forceOreChunkUpdate) {
+        if (lastChunkPos != (chunkLong = currentChunkPos.asLong()) || forceOreChunkUpdate) {
             forceOreChunkUpdate = false;
             List<ChunkSectionPos> chunks = ChunkSectionPos.stream(currentChunkPos, SpelunkerConfig.chunkRadius).toList();
             final List<ChunkSectionPos> newChunks = chunks.stream().filter(chunkSectionPos -> { // filter for new chunks
@@ -79,7 +80,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IPlayerE
 
             chunkCache = chunks.stream().mapToLong(ChunkSectionPos::asLong).toArray(); // update old chunk cache
         }
-        lastChunkPos = currentChunkPos;
+        lastChunkPos = chunkLong;
     }
 
     @Environment(EnvType.CLIENT) // Prevent ClassNotFoundError
