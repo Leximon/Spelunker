@@ -1,7 +1,6 @@
 package de.leximon.spelunker.core;
 
 import de.leximon.spelunker.SpelunkerMod;
-import de.leximon.spelunker.mixin.Vec3iAccessor;
 import net.minecraft.block.Block;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.OutlineVertexConsumerProvider;
