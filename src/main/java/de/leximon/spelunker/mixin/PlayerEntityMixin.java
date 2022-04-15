@@ -2,32 +2,38 @@ package de.leximon.spelunker.mixin;
 
 import de.leximon.spelunker.SpelunkerMod;
 import de.leximon.spelunker.SpelunkerModClient;
+import de.leximon.spelunker.core.IPlayerEntity;
 import de.leximon.spelunker.core.SpelunkerConfig;
 import de.leximon.spelunker.core.SpelunkerEffectManager;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Pair;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkSection;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Mixin(PlayerEntity.class)
-public abstract class PlayerEntityMixin extends LivingEntity {
+public abstract class PlayerEntityMixin extends LivingEntity implements IPlayerEntity {
 
-    private double lastPosX, lastPosY, lastPosZ;
+    private long lastChunkPos = ChunkSectionPos.from(this).asLong();
+    private long[] chunkCache = new long[0];
+
     private boolean forceOreChunkUpdate = true;
-    private final HashSet<Vec3i> spelunkerEffectChunks = new HashSet<>();
 
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
@@ -35,59 +41,55 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void moveEndInject(CallbackInfo ci) {
-        if(!hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
-            if(!spelunkerEffectChunks.isEmpty())
-                spelunkerEffectChunks.clear();
+        if (!hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
             forceOreChunkUpdate = true;
             return;
         }
-        if(SpelunkerConfig.serverValidating && world.isClient())
-            return;
-        double x = getX();
-        double y = getY();
-        double z = getZ();
+        if (world.isClient()) {
+            if(notSingleplayer())
+                return;
+        } else if(!SpelunkerConfig.serverValidating)
+                return;
 
-        int lastCx = ChunkSectionPos.getSectionCoord(lastPosX);
-        int lastCy = ChunkSectionPos.getSectionCoord(lastPosY);
-        int lastCz = ChunkSectionPos.getSectionCoord(lastPosZ);
-        int cx = ChunkSectionPos.getSectionCoord(x);
-        int cy = ChunkSectionPos.getSectionCoord(y);
-        int cz = ChunkSectionPos.getSectionCoord(z);
-
+        ChunkSectionPos currentChunkPos = ChunkSectionPos.from(this);
+        long chunkLong;
         // update if player crosses chunk border
-        if (cx != lastCx || cy != lastCy || cz != lastCz || forceOreChunkUpdate) {
+        if (lastChunkPos != (chunkLong = currentChunkPos.asLong()) || forceOreChunkUpdate) {
             forceOreChunkUpdate = false;
-            HashSet<Pair<Vec3i, ChunkSection>> newChunks = SpelunkerEffectManager.getSurroundingChunkSections(world, getPos());
+            List<ChunkSectionPos> chunks = ChunkSectionPos.stream(currentChunkPos, SpelunkerConfig.chunkRadius).toList();
+            final List<ChunkSectionPos> newChunks = chunks.stream().filter(chunkSectionPos -> { // filter for new chunks
+                for (long pos : chunkCache)
+                    if (chunkSectionPos.asLong() == pos)
+                        return false;
+                return true;
+            }).toList();
 
-            // calc difference
-            HashSet<Vec3i> remove = new HashSet<>();
-            spelunkerEffectChunks.removeIf(p -> {
-                if (newChunks.stream().noneMatch(pair -> p.equals(pair.getLeft()))) {
-                    remove.add(p);
-                    return true;
-                }
-                return false;
-            });
-            HashSet<Vec3i> add = new HashSet<>();
-            for (Pair<Vec3i, ChunkSection> section : newChunks) {
-                if (spelunkerEffectChunks.stream().noneMatch(s -> s.equals(section.getLeft()))) {
-                    add.add(section.getLeft());
-                    spelunkerEffectChunks.add(section.getLeft());
-                }
+            final long[] oldChunks = Arrays.stream(chunkCache).filter(value -> { // filter for old chunks
+                for (ChunkSectionPos sectionPos : chunks)
+                    if (sectionPos.asLong() == value)
+                        return false;
+                return true;
+            }).toArray();
+
+            Long2ObjectMap<List<Pair<BlockPos, Block>>> newList = SpelunkerEffectManager.getNewBlocksFromChunks(world, newChunks);
+            if (newList.size() != 0 || oldChunks.length != 0) {
+                if (world.isClient()) {
+                    SpelunkerModClient.spelunkerEffectRenderer.updateDirtyBlocks(newList, oldChunks, Collections.emptyList());
+                } else ServerPlayNetworking.send((ServerPlayerEntity) (Object) this, SpelunkerMod.PACKET_ORE_CHUNKS, SpelunkerEffectManager.writePacket(newList, oldChunks, Collections.emptyList()));
             }
 
-            // handle new and removed chunk sections
-            if(world.isClient()) {
-                SpelunkerModClient.spelunkerEffectRenderer.updateChunks(world, remove, add);
-            } else if(SpelunkerConfig.serverValidating) {
-                PacketByteBuf buf = SpelunkerEffectManager.findOresAndWritePacket(world, remove, add);
-                ServerPlayNetworking.send((ServerPlayerEntity) (Object) this, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
-            }
+            chunkCache = chunks.stream().mapToLong(ChunkSectionPos::asLong).toArray(); // update old chunk cache
         }
-
-        lastPosX = x;
-        lastPosY = y;
-        lastPosZ = z;
+        lastChunkPos = chunkLong;
     }
 
+    @Environment(EnvType.CLIENT) // Prevent ClassNotFoundError
+    private static boolean notSingleplayer() {
+        return !net.minecraft.client.MinecraftClient.getInstance().isInSingleplayer() && SpelunkerConfig.serverValidating;
+    }
+
+    @Override
+    public long[] getChunkCache() {
+        return chunkCache;
+    }
 }

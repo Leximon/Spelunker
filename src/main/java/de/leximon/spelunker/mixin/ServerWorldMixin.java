@@ -21,7 +21,6 @@ public class ServerWorldMixin {
 
     @Inject(method = "tick", at = @At("TAIL"))
     public void onTick(BooleanSupplier shouldKeepTicking, CallbackInfo ci) {
-        ((IWorld) this).spelunkerUpdateChunks();
+        ((IWorld) this).updateServerChunks();
     }
-
 }

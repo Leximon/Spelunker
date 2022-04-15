@@ -1,154 +1,118 @@
 package de.leximon.spelunker.core;
 
 import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
+import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.block.BlockState;
+import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Pair;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class SpelunkerEffectManager {
 
-    public static Set<Pair<Vec3i, BlockState>> findOresInChunk(World world, Vec3i sectionPos) {
-        Chunk chunk = null;
-        if(world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
+    public static Long2ObjectMap<List<Pair<BlockPos, Block>>> getNewBlocksFromChunks(World world, List<ChunkSectionPos> chunkSections) {
+        Long2ObjectMap<List<Pair<BlockPos, Block>>> dirty = new Long2ObjectArrayMap<>();
+        for (ChunkSectionPos section : chunkSections) {
+            Chunk chunk;
             if (world instanceof ServerWorld sw) {
-                ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage)
-                        .spelunkerGetChunkHolder(ChunkPos.toLong(sectionPos.getX(), sectionPos.getZ()));
-                if(chunkHolder != null)
+                ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage).spelunkerGetChunkHolder(ChunkPos.toLong(section.getX(), section.getZ()));
+                if (chunkHolder != null) {
                     chunk = chunkHolder.getWorldChunk();
-            } else {
-                chunk = world.getChunk(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
-            }
-        }
-        if (chunk == null)
-            return Collections.emptySet();
-        ChunkSection section = chunk.getSection(sectionPos.getY());
-        HashSet<Pair<Vec3i, BlockState>> ores = new HashSet<>();
-        var blockStates = section.getBlockStateContainer();
-        for (int x = 0; x < 16; x++) {
-            for (int y = 0; y < 16; y++) {
-                for (int z = 0; z < 16; z++) {
-                    BlockState state = blockStates.get(x, y, z);
-                    if (isOreBlock(state)) {
-                        Vec3i blockPos = new Vec3i(x, y, z);
-                        ores.add(new Pair<>(blockPos, state));
+                } else chunk = world.getChunkManager().getWorldChunk(section.getX(), section.getZ(), true);
+            } else chunk = world.getChunk(section.getX(), section.getZ(), ChunkStatus.FULL, false);
+            if(chunk == null)
+                continue;
+            List<Pair<BlockPos, Block>> blocks = new ArrayList<>();
+            for(int x = section.getMinX(); x <= section.getMaxX(); x++)
+                for(int y = section.getMinY(); y <= section.getMaxY(); y++)
+                    for(int z = section.getMinZ(); z <= section.getMaxZ(); z++) {
+                        BlockPos pos = new BlockPos(x, y, z);
+                        Block block = chunk.getBlockState(pos).getBlock();
+                        if(SpelunkerEffectManager.isOreBlock(block))
+                            blocks.add(new Pair<>(pos, block));
                     }
-                }
-            }
+            dirty.put(section.asLong(), blocks);
         }
-        return ores;
+        return dirty;
     }
 
-    private static boolean isOreBlock(BlockState state) {
-        return SpelunkerConfig.parsedBlockHighlightColors.containsKey(state.getBlock());
+    public static boolean isOreBlock(Block block) {
+        return SpelunkerConfig.parsedBlockHighlightColors.containsKey(block);
     }
 
-    public static HashSet<Pair<Vec3i, ChunkSection>> getSurroundingChunkSections(World world, Vec3d playerPos) {
-        int cx = ChunkSectionPos.getSectionCoord(playerPos.x);
-        int cy = world.sectionCoordToIndex(ChunkSectionPos.getSectionCoord(playerPos.y));
-        int cz = ChunkSectionPos.getSectionCoord(playerPos.z);
-
-        HashSet<Pair<Vec3i, ChunkSection>> sections = new HashSet<>();
-        for (int x = cx - SpelunkerConfig.chunkRadius; x < cx + SpelunkerConfig.chunkRadius + 1; x++) {
-            for (int z = cz - SpelunkerConfig.chunkRadius; z < cz + SpelunkerConfig.chunkRadius + 1; z++) {
-                for (int y = cy - SpelunkerConfig.chunkRadius; y < cy + SpelunkerConfig.chunkRadius + 1; y++) {
-                    WorldChunk chunk = world.getChunk(x, z);
-                    ChunkSection[] sectionArray = chunk.getSectionArray();
-                    if (y < 0 || y >= sectionArray.length)
-                        continue;
-                    sections.add(new Pair<>(new Vec3i(x, y, z), sectionArray[y]));
-                }
-            }
-        }
-        return sections;
-    }
-
-    public static PacketByteBuf findOresAndWritePacket(World world, HashSet<Vec3i> remove, HashSet<Vec3i> add) {
+    public static PacketByteBuf writePacket(Long2ObjectMap<List<Pair<BlockPos, Block>>> newChunks, long[] oldChunks, List<BlockPos> remove) {
         PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeVarInt(newChunks.size()); // block count to write
+        for (Long2ObjectMap.Entry<List<Pair<BlockPos, Block>>> entry : newChunks.long2ObjectEntrySet()) {
+            buf.writeLong(entry.getLongKey());
+            buf.writeVarInt(entry.getValue().size());
+            for (Pair<BlockPos, Block> pair : entry.getValue()) {
+                buf.writeShort(ChunkSectionPos.packLocal(pair.getLeft())); // write relative block pos
+                buf.writeVarInt(Registry.BLOCK.getRawId(pair.getRight())); // write block id
+            }
+        }
+
+        buf.writeVarInt(oldChunks.length); // block count to write
+        for (long chunkPos : oldChunks)
+            buf.writeVarLong(chunkPos);
 
         buf.writeVarInt(remove.size());
-        for (Vec3i pos : remove) {
-            buf.writeVarInt(pos.getX());
-            buf.writeVarInt(pos.getY());
-            buf.writeVarInt(pos.getZ());
-        }
-
-        buf.writeVarInt(add.size());
-        for (Vec3i pos : add) {
-            buf.writeVarInt(pos.getX());
-            buf.writeVarInt(pos.getY());
-            buf.writeVarInt(pos.getZ());
-
-            var ores = findOresInChunk(world, pos);
-            buf.writeVarInt(ores.size());
-            for (Pair<Vec3i, BlockState> ore : ores) {
-                Vec3i orePos = ore.getLeft();
-                buf.writeByte(orePos.getX());
-                buf.writeByte(orePos.getY());
-                buf.writeByte(orePos.getZ());
-
-                buf.writeVarInt(Registry.BLOCK.getRawId(ore.getRight().getBlock()));
-            }
-        }
-        buf.writeVarInt(world.getBottomSectionCoord());
-
+        for (BlockPos pos : remove)
+            buf.writeLong(pos.asLong());
         return buf;
     }
 
     @Environment(EnvType.CLIENT)
     public static void readPacket(SpelunkerEffectRenderer renderer, PacketByteBuf buf) {
-        int c = buf.readVarInt();
-        for (int i = 0; i < c; i++) {
-            renderer.removeChunk(new Vec3i(
-                    buf.readVarInt(),
-                    buf.readVarInt(),
-                    buf.readVarInt()
-            ));
-        }
-
-        c = buf.readVarInt();
-        HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks = new HashMap<>();
-        for (int i = 0; i < c; i++) {
-            Vec3i pos = new Vec3i(
-                    buf.readVarInt(),
-                    buf.readVarInt(),
-                    buf.readVarInt()
-            );
-
-            HashSet<Pair<Vec3i, BlockState>> ores = new HashSet<>();
-            int cc = buf.readVarInt();
-            for (int j = 0; j < cc; j++) {
-                Vec3i orePos = new Vec3i(
-                        buf.readByte(),
-                        buf.readByte(),
-                        buf.readByte()
-                );
-                ores.add(new Pair<>(orePos, Registry.BLOCK.get(buf.readVarInt()).getDefaultState()));
-            }
-            chunks.put(pos, ores);
-        }
-
-        int bottomSectionCord = buf.readVarInt();
-        renderer.addChunks(bottomSectionCord, chunks);
+        renderer.updateDirtyBlocks(readAddBuf(buf), readRemoveBuf(buf), Collections.emptyList());
     }
 
+    @Environment(EnvType.CLIENT)
+    private static Long2ObjectMap<List<Pair<BlockPos, Block>>> readAddBuf(PacketByteBuf buf) {
+        Long2ObjectMap<List<Pair<BlockPos, Block>>> map = new Long2ObjectArrayMap<>();
+        int size = buf.readVarInt(); // read block count
+        for(int i = 0; i < size; i++) {
+            long chunkPos = buf.readLong();
+            ChunkSectionPos pos = ChunkSectionPos.from(chunkPos);
+            int blockSize = buf.readVarInt();
+            List<Pair<BlockPos, Block>> blocks = new ArrayList<>();
+            for(int ii = 0; ii < blockSize; ii++)
+                blocks.add(new Pair<>(pos.unpackBlockPos(buf.readShort()), Registry.BLOCK.get(buf.readVarInt())));
+            map.put(chunkPos, blocks);
+        }
+        return map;
+    }
+
+    @Environment(EnvType.CLIENT)
+    private static long[] readRemoveBuf(PacketByteBuf buf) {
+        int size = buf.readVarInt();
+        long[] array = new long[size];
+        for(int i = 0; i < size; i++)
+            array[i] = buf.readVarLong();
+        return array;
+    }
 }
