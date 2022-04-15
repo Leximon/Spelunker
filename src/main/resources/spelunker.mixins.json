@@ -8,6 +8,7 @@
     "PlayerEntityMixin",
     "PlayerManagerMixin",
     "ThreadedAnvilChunkStorageAccessor",
+    "Vec3iAccessor",
     "WorldMixin"
   ],
   "server": [

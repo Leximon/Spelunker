@@ -232,4 +232,8 @@ public class SpelunkerConfig {
         blockRadiusMax = (int) Math.pow(effectRadius, 2);
         blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
     }
+
+    public static boolean isOreBlock(Block block) {
+        return parsedBlockHighlightColors.containsKey(block);
+    }
 }
