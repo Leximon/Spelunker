@@ -52,7 +52,7 @@ public class SpelunkerEffectRenderer {
                 chunkSections.remove(v);
             for (ChunkOres chunk : add) {
                 chunkSections.put(chunk.getPos(), chunk
-                        .remapToAbsolutePos(world.getBottomSectionCoord())
+                        .remapToWorldCoordinates(world.getBottomSectionCoord())
                 );
             }
         }
@@ -70,10 +70,10 @@ public class SpelunkerEffectRenderer {
         }
     }
 
-    public void addChunks(int bottomSectionCord, ArrayList<ChunkOres> chunks) {
+    public void addChunks(int bottomSectionCord, Collection<ChunkOres> chunks) {
         synchronized (this) {
             for (ChunkOres chunk : chunks)
-                chunkSections.put(chunk.getPos(), chunk.remapToAbsolutePos(bottomSectionCord));
+                chunkSections.put(chunk.getPos(), chunk.remapToWorldCoordinates(bottomSectionCord));
         }
     }
 }

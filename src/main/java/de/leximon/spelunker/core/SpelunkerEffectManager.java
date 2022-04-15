@@ -137,7 +137,7 @@ public class SpelunkerEffectManager {
                         buf.readByte(),
                         buf.readByte()
                 );
-                ores.processBlock(orePos, Registry.BLOCK.get(buf.readVarInt()));
+                ores.put(orePos, Registry.BLOCK.get(buf.readVarInt()));
             }
             chunks.add(ores);
         }

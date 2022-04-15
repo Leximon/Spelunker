@@ -22,6 +22,7 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
     public static final ChunkOres EMPTY = new ChunkOres(Vec3i.ZERO);
 
     private final Vec3i pos;
+    private boolean remapped = false;
 
     public ChunkOres(Vec3i pos) {
         this.pos = pos;
@@ -37,11 +38,15 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
      * @param block the block
      */
     public void processBlock(BlockPos pos, Block block) {
-        processBlock(new Vec3i(
-                ChunkSectionPos.getLocalCoord(pos.getX()),
-                ChunkSectionPos.getLocalCoord(pos.getY()),
-                ChunkSectionPos.getLocalCoord(pos.getZ())
-        ), block);
+        if(remapped) {
+            processBlock(new Vec3i(pos.getX(), pos.getY(), pos.getZ()), block);
+        } else {
+            processBlock(new Vec3i(
+                    ChunkSectionPos.getLocalCoord(pos.getX()),
+                    ChunkSectionPos.getLocalCoord(pos.getY()),
+                    ChunkSectionPos.getLocalCoord(pos.getZ())
+            ), block);
+        }
     }
 
     /**
@@ -61,13 +66,21 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
      * @param bottomSectionCord the bottom section cord of the world
      * @return this
      */
-    public ChunkOres remapToAbsolutePos(int bottomSectionCord) {
-        for (Map.Entry<Vec3i, Block> pair : entrySet()) {
-            var p = pair.getKey();
-            ((Vec3iAccessor) p).spelunkerSetX(ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX());
-            ((Vec3iAccessor) p).spelunkerSetY(ChunkSectionPos.getBlockCoord(pos.getY() + bottomSectionCord) + p.getY());
-            ((Vec3iAccessor) p).spelunkerSetZ(ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ());
+    public ChunkOres remapToWorldCoordinates(int bottomSectionCord) {
+        remapped = true;
+        HashMap<Vec3i, Block> clone = new HashMap<>(this);
+        clear();
+        for (Map.Entry<Vec3i, Block> pair : clone.entrySet()) {
+            Vec3i p = pair.getKey();
+
+            put(new Vec3i(
+                    ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX(),
+                    ChunkSectionPos.getBlockCoord(pos.getY() + bottomSectionCord) + p.getY(),
+                    ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ()
+            ), pair.getValue());
         }
+
+
         return this;
     }
 
