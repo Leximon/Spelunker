@@ -61,7 +61,7 @@ public abstract class WorldMixin implements IWorld {
             dirtySpelunkerChunks.compute(chunkPos, (p, chunk) -> {
                 if(chunk == null)
                     chunk = new ChunkOres(chunkPos);
-                chunk.processBlock(pos, newBlock.getBlock());
+                chunk.put(pos, newBlock.getBlock());
                 return chunk;
             });
         }
@@ -96,7 +96,7 @@ public abstract class WorldMixin implements IWorld {
         // send to clients
         PacketByteBuf buf;
         synchronized (dirtySpelunkerChunks) {
-            buf = SpelunkerEffectManager.writePacket((World) (Object) this, Collections.emptyList(), dirtySpelunkerChunks.values());
+            buf = SpelunkerEffectManager.writePacket((World) (Object) this, false, Collections.emptyList(), dirtySpelunkerChunks.values());
             dirtySpelunkerChunks.clear();
         }
         for (ServerPlayerEntity p : players) {

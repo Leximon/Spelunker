@@ -78,7 +78,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             if(world.isClient()) {
                 SpelunkerModClient.spelunkerEffectRenderer.updateChunks(world, remove, add);
             } else if(SpelunkerConfig.serverValidating) {
-                PacketByteBuf buf = SpelunkerEffectManager.writePacket(world, remove, add);
+                PacketByteBuf buf = SpelunkerEffectManager.writePacket(world, true, remove, add);
                 ServerPlayNetworking.send((ServerPlayerEntity) (Object) this, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
             }
         }

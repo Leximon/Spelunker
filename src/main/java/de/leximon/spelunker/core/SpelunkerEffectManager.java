@@ -77,9 +77,10 @@ public class SpelunkerEffectManager {
         return sections;
     }
 
-    public static PacketByteBuf writePacket(World world, Collection<Vec3i> remove, Collection<ChunkOres> add) {
+    public static PacketByteBuf writePacket(World world, boolean overwrite, Collection<Vec3i> remove, Collection<ChunkOres> add) {
         PacketByteBuf buf = PacketByteBufs.create();
 
+        buf.writeBoolean(overwrite);
         buf.writeVarInt(remove.size());
         for (Vec3i pos : remove) {
             buf.writeVarInt(pos.getX());
@@ -104,13 +105,15 @@ public class SpelunkerEffectManager {
                 buf.writeVarInt(Registry.BLOCK.getRawId(ore.getValue()));
             }
         }
-        buf.writeVarInt(world.getBottomSectionCoord());
+        if(overwrite)
+            buf.writeVarInt(world.getBottomSectionCoord());
 
         return buf;
     }
 
     @Environment(EnvType.CLIENT)
     public static void readPacket(SpelunkerEffectRenderer renderer, PacketByteBuf buf) {
+        boolean overwrite = buf.readBoolean();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++) {
             renderer.removeChunk(new Vec3i(
@@ -129,7 +132,7 @@ public class SpelunkerEffectManager {
                     buf.readVarInt()
             );
 
-            ChunkOres ores = new ChunkOres(pos);
+            ChunkOres ores = overwrite ? new ChunkOres(pos) : renderer.get(pos);
             int cc = buf.readVarInt();
             for (int j = 0; j < cc; j++) {
                 Vec3i orePos = new Vec3i(
@@ -137,13 +140,18 @@ public class SpelunkerEffectManager {
                         buf.readByte(),
                         buf.readByte()
                 );
-                ores.put(orePos, Registry.BLOCK.get(buf.readVarInt()));
+                Block block = Registry.BLOCK.get(buf.readVarInt());
+                if(ores != null)
+                    ores.processBlock(orePos, block);
             }
-            chunks.add(ores);
+            if(overwrite)
+                chunks.add(ores);
         }
 
-        int bottomSectionCord = buf.readVarInt();
-        renderer.addChunks(bottomSectionCord, chunks);
+        if(overwrite) {
+            int bottomSectionCord = buf.readVarInt();
+            renderer.addChunks(bottomSectionCord, chunks);
+        }
     }
 
 }
