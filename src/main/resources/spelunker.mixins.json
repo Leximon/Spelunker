@@ -14,11 +14,11 @@
     "ServerWorldMixin"
   ],
   "client": [
+    "ClientChunkManagerMixin",
     "ClientPlayerEntityMixin",
     "ClientWorldMixin",
     "WorldRendererAccessor",
-    "WorldRendererMixin",
-    "ClientChunkManagerMixin"
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

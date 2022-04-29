@@ -3,10 +3,6 @@ package de.leximon.spelunker.core;
 import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -24,13 +20,8 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class SpelunkerEffectManager {
 
@@ -61,7 +52,7 @@ public class SpelunkerEffectManager {
     }
 
     public static boolean isOreBlock(Block block) {
-        return SpelunkerConfig.parsedBlockHighlightColors.containsKey(block);
+        return SpelunkerConfig.parsedBlockHighlightColors.containsKey(block.getTranslationKey());
     }
 
     public static PacketByteBuf writePacket(Long2ObjectMap<List<Pair<BlockPos, Block>>> newChunks, long[] oldChunks, List<BlockPos> remove) {

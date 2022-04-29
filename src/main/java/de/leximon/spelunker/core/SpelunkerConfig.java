@@ -5,20 +5,13 @@ import de.siphalor.tweed4.data.hjson.HjsonList;
 import de.siphalor.tweed4.data.hjson.HjsonObject;
 import de.siphalor.tweed4.data.hjson.HjsonSerializer;
 import de.siphalor.tweed4.data.hjson.HjsonValue;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntHash;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.util.Util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,10 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class SpelunkerConfig {
 
@@ -58,7 +48,7 @@ public class SpelunkerConfig {
     public static int blockRadiusMax = 16 * 16;
     public static int blockRadiusMin = 15 * 15;
     public static boolean blockTransitions = true;
-    public static Object2IntMap<Block> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
+    public static Object2IntMap<String> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
 
     public static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "spelunker.hjson");
 
@@ -183,11 +173,7 @@ public class SpelunkerConfig {
 
             int c = TextColor.parse(color).getRgb();
             for (String blockId : blockIds) {
-                Optional<Block> optBlock = Registry.BLOCK.getOrEmpty(new Identifier(blockId));
-                if(optBlock.isEmpty())
-                    SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'", blockId);
-                else
-                    parsedBlockHighlightColors.put(optBlock.get(), c);
+                parsedBlockHighlightColors.put(Util.createTranslationKey("block", new Identifier(blockId)), c);
             }
         }
 
@@ -213,8 +199,8 @@ public class SpelunkerConfig {
         buf.writeBoolean(serverValidating);
         buf.writeVarInt(effectRadius);
         buf.writeVarInt(parsedBlockHighlightColors.size());
-        for (Object2IntMap.Entry<Block> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
-            buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
+        for (Object2IntMap.Entry<String> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
+            buf.writeString(entry.getKey());
             buf.writeInt(entry.getIntValue());
         }
     }
@@ -227,7 +213,7 @@ public class SpelunkerConfig {
         parsedBlockHighlightColors.clear();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++)
-            parsedBlockHighlightColors.put(Registry.BLOCK.get(buf.readVarInt()), buf.readInt());
+            parsedBlockHighlightColors.put(buf.readString(), buf.readInt());
     }
 
     private static void parseEffectRadius() {

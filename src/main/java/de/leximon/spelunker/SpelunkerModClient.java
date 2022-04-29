@@ -8,7 +8,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.server.PlayerManager;
 
 public class SpelunkerModClient implements ClientModInitializer {
 

@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 @Mixin(ClientChunkManager.class)
 public abstract class ClientChunkManagerMixin extends ChunkManager {
 
-    @Shadow @Final private ClientWorld world;
+    @Shadow @Final ClientWorld world;
 
     @Inject(method = "loadChunkFromPacket", at = @At(value = "RETURN", ordinal = 1))
     public void loadChunkFromPacket(int x, int z, PacketByteBuf buf, NbtCompound nbt, Consumer<ChunkData.BlockEntityVisitor> consumer, CallbackInfoReturnable<@Nullable WorldChunk> cir) {

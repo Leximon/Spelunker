@@ -4,32 +4,21 @@ import de.leximon.spelunker.SpelunkerMod;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.OutlineVertexConsumerProvider;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkCache;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SpelunkerEffectRenderer {
 
