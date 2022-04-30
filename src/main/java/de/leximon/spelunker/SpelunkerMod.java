@@ -13,9 +13,6 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
-import net.minecraft.loot.condition.LootCondition;
-import net.minecraft.loot.condition.LootConditionType;
-import net.minecraft.loot.condition.LootConditionTypes;
 import net.minecraft.loot.condition.MatchToolLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.SetPotionLootFunction;
@@ -35,9 +32,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class SpelunkerMod implements ModInitializer {
+
 	public static final String MODID = "spelunker";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
-	public static final Identifier MINESHAFT_LOOT_TABLE = new Identifier("chests/abandoned_mineshaft");
 	public static final Identifier AMETHYST_CLUSTER_LOOT_TABLE = new Identifier("blocks/amethyst_cluster");
 
 	public static final Identifier PACKET_ORE_CHUNKS = identifier("ore_chunks");
@@ -105,10 +102,10 @@ public class SpelunkerMod implements ModInitializer {
 										.build()
 								)
 						.with(ItemEntry.builder(AMETHYST_DUST)
-								.weight(1)
+								.weight(SpelunkerConfig.amethystChance)
 						)
 						.with(ItemEntry.builder(Items.AIR)
-								.weight(9)
+								.weight(100 - SpelunkerConfig.amethystChance)
 						)
 				);
 			}

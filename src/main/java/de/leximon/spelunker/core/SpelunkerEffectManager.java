@@ -4,11 +4,10 @@ import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.block.BlockState;
+import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Pair;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
@@ -20,19 +19,19 @@ import net.minecraft.world.chunk.ChunkSection;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Map;
 
 public class SpelunkerEffectManager {
 
-    public static Set<Pair<Vec3i, BlockState>> findOresInChunk(World world, Vec3i sectionPos) {
+    public static ChunkOres findOresInChunk(World world, Vec3i sectionPos) {
         Chunk chunk = null;
         if(world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
             if (world instanceof ServerWorld sw) {
                 ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage)
-                        .spelunkerGetChunkHolder(ChunkPos.toLong(sectionPos.getX(), sectionPos.getZ()));
+                        .spelunkerGetChunkHolder(ChunkPos.toLong(sectionPos.getX(), sectionPos.getZ())); // prevent random server crash ¯\_(ツ)_/¯
                 if(chunkHolder != null)
                     chunk = chunkHolder.getWorldChunk();
             } else {
@@ -40,17 +39,17 @@ public class SpelunkerEffectManager {
             }
         }
         if (chunk == null)
-            return Collections.emptySet();
+            return ChunkOres.EMPTY;
         ChunkSection section = chunk.getSection(sectionPos.getY());
-        HashSet<Pair<Vec3i, BlockState>> ores = new HashSet<>();
+        ChunkOres ores = new ChunkOres(sectionPos);
         var blockStates = section.getBlockStateContainer();
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 16; y++) {
                 for (int z = 0; z < 16; z++) {
-                    BlockState state = blockStates.get(x, y, z);
-                    if (isOreBlock(state)) {
+                    Block block = blockStates.get(x, y, z).getBlock();
+                    if (SpelunkerConfig.isOreBlock(block)) {
                         Vec3i blockPos = new Vec3i(x, y, z);
-                        ores.add(new Pair<>(blockPos, state));
+                        ores.put(blockPos, block);
                     }
                 }
             }
@@ -58,16 +57,12 @@ public class SpelunkerEffectManager {
         return ores;
     }
 
-    private static boolean isOreBlock(BlockState state) {
-        return SpelunkerConfig.parsedBlockHighlightColors.containsKey(state.getBlock());
-    }
-
-    public static HashSet<Pair<Vec3i, ChunkSection>> getSurroundingChunkSections(World world, Vec3d playerPos) {
+    public static HashMap<Vec3i, ChunkSection> getSurroundingChunkSections(World world, Vec3d playerPos) {
         int cx = ChunkSectionPos.getSectionCoord(playerPos.x);
         int cy = world.sectionCoordToIndex(ChunkSectionPos.getSectionCoord(playerPos.y));
         int cz = ChunkSectionPos.getSectionCoord(playerPos.z);
 
-        HashSet<Pair<Vec3i, ChunkSection>> sections = new HashSet<>();
+        HashMap<Vec3i, ChunkSection> sections = new HashMap<>();
         for (int x = cx - SpelunkerConfig.chunkRadius; x < cx + SpelunkerConfig.chunkRadius + 1; x++) {
             for (int z = cz - SpelunkerConfig.chunkRadius; z < cz + SpelunkerConfig.chunkRadius + 1; z++) {
                 for (int y = cy - SpelunkerConfig.chunkRadius; y < cy + SpelunkerConfig.chunkRadius + 1; y++) {
@@ -75,16 +70,17 @@ public class SpelunkerEffectManager {
                     ChunkSection[] sectionArray = chunk.getSectionArray();
                     if (y < 0 || y >= sectionArray.length)
                         continue;
-                    sections.add(new Pair<>(new Vec3i(x, y, z), sectionArray[y]));
+                    sections.put(new Vec3i(x, y, z), sectionArray[y]);
                 }
             }
         }
         return sections;
     }
 
-    public static PacketByteBuf findOresAndWritePacket(World world, HashSet<Vec3i> remove, HashSet<Vec3i> add) {
+    public static PacketByteBuf writePacket(World world, boolean overwrite, Collection<Vec3i> remove, Collection<ChunkOres> add) {
         PacketByteBuf buf = PacketByteBufs.create();
 
+        buf.writeBoolean(overwrite);
         buf.writeVarInt(remove.size());
         for (Vec3i pos : remove) {
             buf.writeVarInt(pos.getX());
@@ -93,29 +89,31 @@ public class SpelunkerEffectManager {
         }
 
         buf.writeVarInt(add.size());
-        for (Vec3i pos : add) {
+        for (ChunkOres ores : add) {
+            Vec3i pos = ores.getPos();
             buf.writeVarInt(pos.getX());
             buf.writeVarInt(pos.getY());
             buf.writeVarInt(pos.getZ());
 
-            var ores = findOresInChunk(world, pos);
             buf.writeVarInt(ores.size());
-            for (Pair<Vec3i, BlockState> ore : ores) {
-                Vec3i orePos = ore.getLeft();
+            for (Map.Entry<Vec3i, Block> ore : ores.entrySet()) {
+                Vec3i orePos = ore.getKey();
                 buf.writeByte(orePos.getX());
                 buf.writeByte(orePos.getY());
                 buf.writeByte(orePos.getZ());
 
-                buf.writeVarInt(Registry.BLOCK.getRawId(ore.getRight().getBlock()));
+                buf.writeVarInt(Registry.BLOCK.getRawId(ore.getValue()));
             }
         }
-        buf.writeVarInt(world.getBottomSectionCoord());
+        if(overwrite)
+            buf.writeVarInt(world.getBottomSectionCoord());
 
         return buf;
     }
 
     @Environment(EnvType.CLIENT)
     public static void readPacket(SpelunkerEffectRenderer renderer, PacketByteBuf buf) {
+        boolean overwrite = buf.readBoolean();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++) {
             renderer.removeChunk(new Vec3i(
@@ -126,7 +124,7 @@ public class SpelunkerEffectManager {
         }
 
         c = buf.readVarInt();
-        HashMap<Vec3i, Set<Pair<Vec3i, BlockState>>> chunks = new HashMap<>();
+        ArrayList<ChunkOres> chunks = new ArrayList<>(c);
         for (int i = 0; i < c; i++) {
             Vec3i pos = new Vec3i(
                     buf.readVarInt(),
@@ -134,7 +132,7 @@ public class SpelunkerEffectManager {
                     buf.readVarInt()
             );
 
-            HashSet<Pair<Vec3i, BlockState>> ores = new HashSet<>();
+            ChunkOres ores = overwrite ? new ChunkOres(pos) : renderer.get(pos);
             int cc = buf.readVarInt();
             for (int j = 0; j < cc; j++) {
                 Vec3i orePos = new Vec3i(
@@ -142,13 +140,18 @@ public class SpelunkerEffectManager {
                         buf.readByte(),
                         buf.readByte()
                 );
-                ores.add(new Pair<>(orePos, Registry.BLOCK.get(buf.readVarInt()).getDefaultState()));
+                Block block = Registry.BLOCK.get(buf.readVarInt());
+                if(ores != null)
+                    ores.processBlock(orePos, block);
             }
-            chunks.put(pos, ores);
+            if(overwrite)
+                chunks.add(ores);
         }
 
-        int bottomSectionCord = buf.readVarInt();
-        renderer.addChunks(bottomSectionCord, chunks);
+        if(overwrite) {
+            int bottomSectionCord = buf.readVarInt();
+            renderer.addChunks(bottomSectionCord, chunks);
+        }
     }
 
 }

@@ -8,7 +8,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.server.PlayerManager;
 
 public class SpelunkerModClient implements ClientModInitializer {
 
@@ -22,7 +21,7 @@ public class SpelunkerModClient implements ClientModInitializer {
             WorldRendererAccessor worldRenderer = (WorldRendererAccessor) context.worldRenderer();
             MinecraftClient client = MinecraftClient.getInstance();
 
-            if (spelunkerEffectRenderer.isEnabled()) {
+            if (spelunkerEffectRenderer.isActive()) {
                 if (!isAlreadyRenderingOutline) { // prevent the outline shader from being rendered twice due glowing entities
                     worldRenderer.getEntityOutlineShader().render(context.tickDelta());
                     client.getFramebuffer().beginWrite(false);
