@@ -93,6 +93,8 @@ public class SpelunkerEffectRenderer {
         for (Map.Entry<Vec3i, Block> ore : chunk.entrySet()) {
             Vec3i pos = ore.getKey();
             double squareDistance = toSquaredDistanceFromCenter(pos, playerPos.getX(), playerPos.getY(), playerPos.getZ());
+            if (squareDistance > SpelunkerConfig.blockRadiusMax)
+                continue;
             float fade;
             if (SpelunkerConfig.blockTransitions) {
                 fade = Math.min(1 - (float) ((squareDistance - SpelunkerConfig.blockRadiusMin) / (SpelunkerConfig.blockRadiusMax - SpelunkerConfig.blockRadiusMin)), 1);
@@ -100,8 +102,6 @@ public class SpelunkerEffectRenderer {
             } else {
                 fade = 1;
             }
-            if (squareDistance > SpelunkerConfig.blockRadiusMax)
-                continue;
             matrices.push();
             matrices.translate(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
             matrices.scale(fade, fade, fade);

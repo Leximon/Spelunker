@@ -12,7 +12,6 @@ import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
 import net.minecraft.util.registry.Registry;
 
 import java.io.File;
@@ -21,10 +20,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class SpelunkerConfig {
 
@@ -52,8 +50,12 @@ public class SpelunkerConfig {
     public static int chunkRadius = 1;
     public static int blockRadiusMax = 16 * 16;
     public static int blockRadiusMin = 15 * 15;
+    public static int amethystChance = 10;
     public static boolean blockTransitions = true;
-    public static Object2IntMap<String> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
+    public static Object2IntMap<Block> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
+
+    private static Consumer<Void> blockHighlightInitializer = v -> {};
+    private static boolean blockHighlightInitialized = false;
 
     public static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "spelunker.hjson");
 
@@ -98,6 +100,13 @@ public class SpelunkerConfig {
             obj.set("block-transitions", blockTransitions).setComment("default: true");
             rewrite = true;
         }
+        if (!obj.hasInt("amethyst-dust-chance")) {
+            obj.set("amethyst-dust-chance", amethystChance).setComment("""
+                    Specifies the chance how often an amethyst dust should drop when mining an amethyst cluster
+                    default: 10
+                    """);
+            rewrite = true;
+        }
         if (!obj.hasList("loot-tables")) {
             int min = 1, max = 1;
             int shortPotionChance = 10, longPotionChance = 25;
@@ -134,7 +143,7 @@ public class SpelunkerConfig {
             eObj.set("long-potion-chance", longPotionChance).setComment("""
                     Modifies how likely it is that a long-potion generates in this loot table
                     default: 25
-                    """);;
+                    """);
             rewrite = true;
         }
         if (!obj.has("block-highlight-colors")) {
@@ -152,7 +161,6 @@ public class SpelunkerConfig {
 
         if(rewrite) {
             CONFIG_FILE.getParentFile().mkdir();
-
             FileOutputStream out = new FileOutputStream(CONFIG_FILE);
             HjsonSerializer.INSTANCE.writeValue(out, obj);
             out.close();
@@ -164,10 +172,11 @@ public class SpelunkerConfig {
         HjsonObject obj = HjsonSerializer.INSTANCE.readValue(in).asObject();
         in.close();
 
-        serverValidating = obj.getBoolean("server-validating", true);
-        effectRadius = obj.getInt("effect-radius", 16);
+        serverValidating = obj.getBoolean("server-validating", serverValidating);
+        effectRadius = obj.getInt("effect-radius", effectRadius);
         parseEffectRadius();
-        blockTransitions = obj.getBoolean("block-transitions", true);
+        blockTransitions = obj.getBoolean("block-transitions", blockTransitions);
+        amethystChance = obj.getInt("amethyst-dust-chance", amethystChance);
         HjsonList blockHighlightColorList = obj.get("block-highlight-colors").asList();
         for (HjsonValue value : blockHighlightColorList) {
             HjsonObject blockObj = value.asObject();
@@ -178,8 +187,14 @@ public class SpelunkerConfig {
                 blockIds.add(blockIdValue.asString());
 
             int c = TextColor.parse(color).getRgb();
-            for (String blockId : blockIds)
-                parsedBlockHighlightColors.put(Util.createTranslationKey("block", new Identifier(blockId)), c);
+            blockHighlightInitializer = blockHighlightInitializer.andThen(v -> {
+                for (String blockId : blockIds) {
+                    Optional<Block> optBlock = Registry.BLOCK.getOrEmpty(new Identifier(blockId));
+                    if(optBlock.isEmpty())
+                        SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'", blockId);
+                    else parsedBlockHighlightColors.put(optBlock.get(), c);
+                }
+            });
         }
 
         if(obj.has("loot-tables")) {
@@ -203,9 +218,10 @@ public class SpelunkerConfig {
     public static void writePacket(PacketByteBuf buf) {
         buf.writeBoolean(serverValidating);
         buf.writeVarInt(effectRadius);
+        initBlockHighlightConfig();
         buf.writeVarInt(parsedBlockHighlightColors.size());
-        for (Object2IntMap.Entry<String> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
-            buf.writeString(entry.getKey());
+        for (Object2IntMap.Entry<Block> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
+            buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
             buf.writeInt(entry.getIntValue());
         }
     }
@@ -218,7 +234,7 @@ public class SpelunkerConfig {
         parsedBlockHighlightColors.clear();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++)
-            parsedBlockHighlightColors.put(buf.readString(), buf.readInt());
+            parsedBlockHighlightColors.put(Registry.BLOCK.get(buf.readVarInt()), buf.readInt());
     }
 
     private static void parseEffectRadius() {
@@ -227,7 +243,14 @@ public class SpelunkerConfig {
         blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
     }
 
+    public static void initBlockHighlightConfig() {
+        if(blockHighlightInitialized)
+            return;
+        blockHighlightInitialized = true;
+        blockHighlightInitializer.accept(null);
+    }
+
     public static boolean isOreBlock(Block block) {
-        return parsedBlockHighlightColors.containsKey(block.getTranslationKey());
+        return parsedBlockHighlightColors.containsKey(block);
     }
 }
