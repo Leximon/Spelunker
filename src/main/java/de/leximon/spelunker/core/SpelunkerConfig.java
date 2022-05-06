@@ -218,7 +218,6 @@ public class SpelunkerConfig {
     public static void writePacket(PacketByteBuf buf) {
         buf.writeBoolean(serverValidating);
         buf.writeVarInt(effectRadius);
-        initBlockHighlightConfig();
         buf.writeVarInt(parsedBlockHighlightColors.size());
         for (Object2IntMap.Entry<Block> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
             buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
