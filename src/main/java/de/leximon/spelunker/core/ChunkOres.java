@@ -14,6 +14,7 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
 
     private final Vec3i pos;
     private boolean remapped = false;
+    private int bottomSectionCord;
 
     public ChunkOres(Vec3i pos) {
         this.pos = pos;
@@ -30,13 +31,9 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
      */
     public void processBlock(BlockPos pos, Block block) {
         if(remapped) {
-            processBlock(new Vec3i(pos.getX(), pos.getY(), pos.getZ()), block);
+            processBlock((Vec3i) pos, block);
         } else {
-            processBlock(new Vec3i(
-                    ChunkSectionPos.getLocalCoord(pos.getX()),
-                    ChunkSectionPos.getLocalCoord(pos.getY()),
-                    ChunkSectionPos.getLocalCoord(pos.getZ())
-            ), block);
+            processBlock(toLocalCoord(pos), block);
         }
     }
 
@@ -46,6 +43,8 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
      * @param block the block
      */
     public void processBlock(Vec3i pos, Block block) {
+        if(remapped)
+            pos = toBlockCoord(pos, this.pos, bottomSectionCord);
         if(SpelunkerConfig.isOreBlock(block))
             put(pos, block);
         else
@@ -58,20 +57,33 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
      * @return this
      */
     public ChunkOres remapToWorldCoordinates(int bottomSectionCord) {
-        remapped = true;
+        this.remapped = true;
+        this.bottomSectionCord = bottomSectionCord;
         HashMap<Vec3i, Block> clone = new HashMap<>(this);
         clear();
         for (Map.Entry<Vec3i, Block> pair : clone.entrySet()) {
             Vec3i p = pair.getKey();
 
-            put(new Vec3i(
-                    ChunkSectionPos.getBlockCoord(pos.getX()) + p.getX(),
-                    ChunkSectionPos.getBlockCoord(pos.getY() + bottomSectionCord) + p.getY(),
-                    ChunkSectionPos.getBlockCoord(pos.getZ()) + p.getZ()
-            ), pair.getValue());
+            put(toBlockCoord(p, pos, bottomSectionCord), pair.getValue());
         }
 
 
         return this;
+    }
+
+    public static Vec3i toLocalCoord(Vec3i blockPos) {
+        return new Vec3i(
+                ChunkSectionPos.getLocalCoord(blockPos.getX()),
+                ChunkSectionPos.getLocalCoord(blockPos.getY()),
+                ChunkSectionPos.getLocalCoord(blockPos.getZ())
+        );
+    }
+
+    public static Vec3i toBlockCoord(Vec3i localPos, Vec3i sectionPos, int bottomSectionCord) {
+        return new Vec3i(
+                ChunkSectionPos.getBlockCoord(sectionPos.getX()) + localPos.getX(),
+                ChunkSectionPos.getBlockCoord(sectionPos.getY() + bottomSectionCord) + localPos.getY(),
+                ChunkSectionPos.getBlockCoord(sectionPos.getZ()) + localPos.getZ()
+        );
     }
 }

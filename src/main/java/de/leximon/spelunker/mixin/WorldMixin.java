@@ -47,6 +47,9 @@ public abstract class WorldMixin implements IWorld {
     // add block to modified chunk list
     @Override
     public void spelunkerUpdateBlock(BlockPos pos, BlockState oldBlock, BlockState newBlock) {
+        if(!(SpelunkerConfig.isOreBlock(oldBlock.getBlock()) || SpelunkerConfig.isOreBlock(newBlock.getBlock())))
+            return;
+
         Vec3i chunkPos = new Vec3i(
                 ChunkSectionPos.getSectionCoord(pos.getX()),
                 ((World) (Object) this).sectionCoordToIndex(ChunkSectionPos.getSectionCoord(pos.getY())),
@@ -61,7 +64,7 @@ public abstract class WorldMixin implements IWorld {
             dirtySpelunkerChunks.compute(chunkPos, (p, chunk) -> {
                 if(chunk == null)
                     chunk = new ChunkOres(chunkPos);
-                chunk.put(pos, newBlock.getBlock());
+                chunk.put(ChunkOres.toLocalCoord(pos), newBlock.getBlock());
                 return chunk;
             });
         }
