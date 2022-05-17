@@ -57,7 +57,7 @@ public class SpelunkerEffectRenderer {
                 chunkSections.remove(v);
             for (ChunkOres chunk : add) {
                 chunkSections.put(chunk.getPos(), chunk
-                        .remapToWorldCoordinates(world.getBottomSectionCoord())
+                        .remapToBlockCoordinates(world.getBottomSectionCoord())
                 );
             }
         }
@@ -78,7 +78,7 @@ public class SpelunkerEffectRenderer {
     public void addChunks(int bottomSectionCord, Collection<ChunkOres> chunks) {
         synchronized (this) {
             for (ChunkOres chunk : chunks)
-                chunkSections.put(chunk.getPos(), chunk.remapToWorldCoordinates(bottomSectionCord));
+                chunkSections.put(chunk.getPos(), chunk.remapToBlockCoordinates(bottomSectionCord));
         }
     }
 

@@ -77,7 +77,7 @@ public abstract class WorldMixin implements IWorld {
         if ((!SpelunkerConfig.serverValidating || client.isInSingleplayer()) && client.player != null && client.player.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
             ChunkOres chunk = SpelunkerModClient.spelunkerEffectRenderer.get(chunkPos);
             if (chunk != null)
-                chunk.processBlock(pos, newBlock.getBlock());
+                chunk.processBlock(pos, newBlock.getBlock(), false);
         }
     }
 

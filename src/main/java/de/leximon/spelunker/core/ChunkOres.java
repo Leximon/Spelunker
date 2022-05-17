@@ -1,7 +1,6 @@
 package de.leximon.spelunker.core;
 
 import net.minecraft.block.Block;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3i;
 
@@ -13,8 +12,8 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
     public static final ChunkOres EMPTY = new ChunkOres(Vec3i.ZERO);
 
     private final Vec3i pos;
-    private boolean remapped = false;
-    private int bottomSectionCord;
+    private boolean remapped = false; // true: block coordinates; false: local coordinates
+    private int bottomSectionCord; // only available if remapped is true
 
     public ChunkOres(Vec3i pos) {
         this.pos = pos;
@@ -26,25 +25,14 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
 
     /**
      * adds or removes a block according to whether it is an ore block
-     * @param pos the world coordinate
-     * @param block the block
-     */
-    public void processBlock(BlockPos pos, Block block) {
-        if(remapped) {
-            processBlock((Vec3i) pos, block);
-        } else {
-            processBlock(toLocalCoord(pos), block);
-        }
-    }
-
-    /**
-     * adds or removes a block according to whether it is an ore block
      * @param pos the local coordinate in the chunk
      * @param block the block
      */
-    public void processBlock(Vec3i pos, Block block) {
-        if(remapped)
+    public void processBlock(Vec3i pos, Block block, boolean localPos) {
+        if(remapped && localPos)
             pos = toBlockCoord(pos, this.pos, bottomSectionCord);
+        else if(!remapped && !localPos)
+            pos = toLocalCoord(pos);
         if(SpelunkerConfig.isOreBlock(block))
             put(pos, block);
         else
@@ -52,11 +40,11 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
     }
 
     /**
-     * remaps all local coordinates to world coordinates
+     * remaps all local coordinates to block coordinates
      * @param bottomSectionCord the bottom section cord of the world
      * @return this
      */
-    public ChunkOres remapToWorldCoordinates(int bottomSectionCord) {
+    public ChunkOres remapToBlockCoordinates(int bottomSectionCord) {
         this.remapped = true;
         this.bottomSectionCord = bottomSectionCord;
         HashMap<Vec3i, Block> clone = new HashMap<>(this);

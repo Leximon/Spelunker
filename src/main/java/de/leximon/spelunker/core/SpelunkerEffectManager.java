@@ -142,7 +142,7 @@ public class SpelunkerEffectManager {
                 );
                 Block block = Registry.BLOCK.get(buf.readVarInt());
                 if(ores != null)
-                    ores.processBlock(orePos, block);
+                    ores.processBlock(orePos, block, true);
             }
             if(overwrite)
                 chunks.add(ores);
