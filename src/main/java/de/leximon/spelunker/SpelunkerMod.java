@@ -53,8 +53,8 @@ public class SpelunkerMod implements ModInitializer {
 		AMETHYST_DUST = Registry.register(Registry.ITEM, identifier("amethyst_dust"), new Item(new FabricItemSettings().group(ItemGroup.MISC)));
 
 		STATUS_EFFECT_SPELUNKER = Registry.register(Registry.STATUS_EFFECT, identifier("spelunker"), new SpelunkerStatusEffect());
-		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90)));
-		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 90 * 2)));
+		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 45)));
+		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 45 * 2)));
 
 		// register recipes
 		if(SpelunkerConfig.allowPotionBrewing) {

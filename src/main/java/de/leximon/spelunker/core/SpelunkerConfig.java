@@ -46,7 +46,7 @@ public class SpelunkerConfig {
 
     public static boolean serverValidating = true;
     public static boolean allowPotionBrewing = true;
-    private static int effectRadius = 16;
+    private static int effectRadius = 6;
     public static int chunkRadius = 1;
     public static int blockRadiusMax = 16 * 16;
     public static int blockRadiusMin = 15 * 15;
@@ -91,7 +91,7 @@ public class SpelunkerConfig {
             obj.set("effect-radius", effectRadius).setComment("""
                     How many blocks the effect should range
                     a higher value than 32 is not recommended
-                    default: 16
+                    default: 6
                     Must be greater or equal to 1
                     """);
             rewrite = true;
@@ -173,6 +173,7 @@ public class SpelunkerConfig {
         in.close();
 
         serverValidating = obj.getBoolean("server-validating", serverValidating);
+        allowPotionBrewing = obj.getBoolean("allow-potion-brewing", allowPotionBrewing);
         effectRadius = obj.getInt("effect-radius", effectRadius);
         parseEffectRadius();
         blockTransitions = obj.getBoolean("block-transitions", blockTransitions);
