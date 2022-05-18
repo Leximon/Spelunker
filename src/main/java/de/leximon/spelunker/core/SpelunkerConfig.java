@@ -51,6 +51,8 @@ public class SpelunkerConfig {
     public static int blockRadiusMax = 16 * 16;
     public static int blockRadiusMin = 15 * 15;
     public static int amethystChance = 10;
+    public static int shortPotionDuration = 45;
+    public static int longPotionDuration = 90;
     public static boolean blockTransitions = true;
     public static Object2IntMap<Block> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
 
@@ -104,6 +106,20 @@ public class SpelunkerConfig {
             obj.set("amethyst-dust-chance", amethystChance).setComment("""
                     Specifies the chance how often an amethyst dust should drop when mining an amethyst cluster
                     default: 10
+                    """);
+            rewrite = true;
+        }
+        if (!obj.hasInt("short-potion-duration")) {
+            obj.set("short-potion-duration", shortPotionDuration).setComment("""
+                    The duration of the short spelunker potion in seconds
+                    default: 45
+                    """);
+            rewrite = true;
+        }
+        if (!obj.hasInt("long-potion-duration")) {
+            obj.set("long-potion-duration", shortPotionDuration).setComment("""
+                    The duration of the long spelunker potion in seconds
+                    default: 90
                     """);
             rewrite = true;
         }

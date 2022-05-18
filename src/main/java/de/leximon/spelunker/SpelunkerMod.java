@@ -50,19 +50,6 @@ public class SpelunkerMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		AMETHYST_DUST = Registry.register(Registry.ITEM, identifier("amethyst_dust"), new Item(new FabricItemSettings().group(ItemGroup.MISC)));
-
-		STATUS_EFFECT_SPELUNKER = Registry.register(Registry.STATUS_EFFECT, identifier("spelunker"), new SpelunkerStatusEffect());
-		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 45)));
-		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * 45 * 2)));
-
-		// register recipes
-		if(SpelunkerConfig.allowPotionBrewing) {
-			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.NIGHT_VISION, AMETHYST_DUST, SPELUNKER_POTION);
-			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.LONG_NIGHT_VISION, AMETHYST_DUST, LONG_SPELUNKER_POTION);
-			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(SPELUNKER_POTION, Items.REDSTONE, LONG_SPELUNKER_POTION);
-		}
-
 		// load config
 		try {
 			SpelunkerConfig.createDefaultConfig();
@@ -71,6 +58,20 @@ public class SpelunkerMod implements ModInitializer {
 			e.printStackTrace();
 		}
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> SpelunkerConfig.initBlockHighlightConfig());
+
+		// register
+		AMETHYST_DUST = Registry.register(Registry.ITEM, identifier("amethyst_dust"), new Item(new FabricItemSettings().group(ItemGroup.MISC)));
+
+		STATUS_EFFECT_SPELUNKER = Registry.register(Registry.STATUS_EFFECT, identifier("spelunker"), new SpelunkerStatusEffect());
+		SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * SpelunkerConfig.shortPotionDuration)));
+		LONG_SPELUNKER_POTION = Registry.register(Registry.POTION, identifier("long_spelunker"), new Potion(new StatusEffectInstance(STATUS_EFFECT_SPELUNKER, 20 * SpelunkerConfig.longPotionDuration)));
+
+		// register recipes
+		if(SpelunkerConfig.allowPotionBrewing) {
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.NIGHT_VISION, AMETHYST_DUST, SPELUNKER_POTION);
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(Potions.LONG_NIGHT_VISION, AMETHYST_DUST, LONG_SPELUNKER_POTION);
+			BrewingRecipeRegistryAccessor.spelunkerRegisterPotionRecipe(SPELUNKER_POTION, Items.REDSTONE, LONG_SPELUNKER_POTION);
+		}
 
 		// add potion to loot tables
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
