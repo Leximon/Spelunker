@@ -117,7 +117,7 @@ public class SpelunkerConfig {
             rewrite = true;
         }
         if (!obj.hasInt("long-potion-duration")) {
-            obj.set("long-potion-duration", shortPotionDuration).setComment("""
+            obj.set("long-potion-duration", longPotionDuration).setComment("""
                     The duration of the long spelunker potion in seconds
                     default: 90
                     """);
@@ -190,6 +190,8 @@ public class SpelunkerConfig {
 
         serverValidating = obj.getBoolean("server-validating", serverValidating);
         allowPotionBrewing = obj.getBoolean("allow-potion-brewing", allowPotionBrewing);
+        shortPotionDuration = obj.getInt("short-potion-duration", shortPotionDuration);
+        longPotionDuration = obj.getInt("long-potion-duration", longPotionDuration);
         effectRadius = obj.getInt("effect-radius", effectRadius);
         parseEffectRadius();
         blockTransitions = obj.getBoolean("block-transitions", blockTransitions);
