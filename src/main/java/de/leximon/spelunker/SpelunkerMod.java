@@ -25,7 +25,6 @@ import net.minecraft.potion.Potions;
 import net.minecraft.predicate.NumberRange;
 import net.minecraft.predicate.item.EnchantmentPredicate;
 import net.minecraft.predicate.item.ItemPredicate;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.slf4j.Logger;
@@ -36,7 +35,7 @@ import java.io.IOException;
 public class SpelunkerMod implements ModInitializer {
 
 	public static final String MODID = "spelunker";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
+	public static final Logger LOGGER = LoggerFactory.getLogger("Spelunker");
 	public static final Identifier AMETHYST_CLUSTER_LOOT_TABLE = new Identifier("blocks/amethyst_cluster");
 
 	public static final Identifier PACKET_ORE_CHUNKS = identifier("ore_chunks");
@@ -75,7 +74,7 @@ public class SpelunkerMod implements ModInitializer {
 
 		// add potion to loot tables
 		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
-			for (SpelunkerConfig.LootTableEntry entry : SpelunkerConfig.lootTables) {
+			for (SpelunkerConfig.LootTableEntry entry : SpelunkerConfig.LOOT_TABLES) {
 				if(entry.id().equals(id)) {
 					LootNumberProvider rollProvider;
 					if(entry.min() == entry.max())

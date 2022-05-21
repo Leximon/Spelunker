@@ -1,6 +1,6 @@
 package de.leximon.spelunker.core;
 
-import de.leximon.spelunker.mixin.ThreadedAnvilChunkStorageAccessor;
+import de.leximon.spelunker.mixin.server.ThreadedAnvilChunkStorageAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -49,7 +49,7 @@ public class SpelunkerEffectManager {
                     Block block = blockStates.get(x, y, z).getBlock();
                     if (SpelunkerConfig.isOreBlock(block)) {
                         Vec3i blockPos = new Vec3i(x, y, z);
-                        ores.put(blockPos, block);
+                        ores.put(blockPos, SpelunkerConfig.blockConfigs.get(block));
                     }
                 }
             }
@@ -96,13 +96,14 @@ public class SpelunkerEffectManager {
             buf.writeVarInt(pos.getZ());
 
             buf.writeVarInt(ores.size());
-            for (Map.Entry<Vec3i, Block> ore : ores.entrySet()) {
+            for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> ore : ores.entrySet()) {
                 Vec3i orePos = ore.getKey();
                 buf.writeByte(orePos.getX());
                 buf.writeByte(orePos.getY());
                 buf.writeByte(orePos.getZ());
 
-                buf.writeVarInt(Registry.BLOCK.getRawId(ore.getValue()));
+                SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
+                buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
             }
         }
         if(overwrite)
@@ -140,9 +141,10 @@ public class SpelunkerEffectManager {
                         buf.readByte(),
                         buf.readByte()
                 );
-                Block block = Registry.BLOCK.get(buf.readVarInt());
+                int blockId = buf.readVarInt();
+
                 if(ores != null)
-                    ores.processBlock(orePos, block, true);
+                    ores.processConfig(orePos, blockId == -1 ? null : SpelunkerConfig.blockConfigs.get(Registry.BLOCK.get(blockId)), true);
             }
             if(overwrite)
                 chunks.add(ores);

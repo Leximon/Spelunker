@@ -1,4 +1,4 @@
-package de.leximon.spelunker.mixin;
+package de.leximon.spelunker.mixin.client;
 
 import de.leximon.spelunker.SpelunkerModClient;
 import net.minecraft.client.render.Camera;

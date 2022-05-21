@@ -6,19 +6,18 @@
   "mixins": [
     "BrewingRecipeRegistryAccessor",
     "PlayerEntityMixin",
-    "PlayerManagerMixin",
-    "ThreadedAnvilChunkStorageAccessor",
-    "WorldMixin"
+    "WorldMixin",
+    "server.ThreadedAnvilChunkStorageAccessor"
   ],
   "server": [
-    "ServerChunkManagerAccessor",
-    "ServerWorldMixin"
+    "server.PlayerManagerMixin",
+    "server.ServerWorldMixin"
   ],
   "client": [
-    "ClientPlayerEntityMixin",
-    "ClientWorldMixin",
-    "WorldRendererAccessor",
-    "WorldRendererMixin"
+    "client.ClientPlayerEntityMixin",
+    "client.ClientWorldMixin",
+    "client.WorldRendererAccessor",
+    "client.WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

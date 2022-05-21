@@ -1,4 +1,4 @@
-package de.leximon.spelunker.mixin;
+package de.leximon.spelunker.mixin.server;
 
 import com.mojang.authlib.GameProfile;
 import de.leximon.spelunker.SpelunkerMod;

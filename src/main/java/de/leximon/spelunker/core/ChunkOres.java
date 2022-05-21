@@ -1,13 +1,12 @@
 package de.leximon.spelunker.core;
 
-import net.minecraft.block.Block;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChunkOres extends HashMap<Vec3i, Block> {
+public class ChunkOres extends HashMap<Vec3i, SpelunkerConfig.ChunkBlockConfig> {
 
     public static final ChunkOres EMPTY = new ChunkOres(Vec3i.ZERO);
 
@@ -20,23 +19,22 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
     }
 
     public Vec3i getPos() {
-        return pos;
+        return this.pos;
     }
 
     /**
      * adds or removes a block according to whether it is an ore block
      * @param pos the local coordinate in the chunk
-     * @param block the block
+     * @param conf the config
      */
-    public void processBlock(Vec3i pos, Block block, boolean localPos) {
-        if(remapped && localPos)
-            pos = toBlockCoord(pos, this.pos, bottomSectionCord);
-        else if(!remapped && !localPos)
+    public void processConfig(Vec3i pos, SpelunkerConfig.ChunkBlockConfig conf, boolean localPos) {
+        if(this.remapped && localPos)
+            pos = toBlockCoord(pos, this.pos, this.bottomSectionCord);
+        else if(!this.remapped && !localPos)
             pos = toLocalCoord(pos);
-        if(SpelunkerConfig.isOreBlock(block))
-            put(pos, block);
-        else
+        if(conf == null)
             remove(pos);
+        else put(pos, conf);
     }
 
     /**
@@ -47,15 +45,10 @@ public class ChunkOres extends HashMap<Vec3i, Block> {
     public ChunkOres remapToBlockCoordinates(int bottomSectionCord) {
         this.remapped = true;
         this.bottomSectionCord = bottomSectionCord;
-        HashMap<Vec3i, Block> clone = new HashMap<>(this);
+        HashMap<Vec3i, SpelunkerConfig.ChunkBlockConfig> clone = new HashMap<>(this);
         clear();
-        for (Map.Entry<Vec3i, Block> pair : clone.entrySet()) {
-            Vec3i p = pair.getKey();
-
-            put(toBlockCoord(p, pos, bottomSectionCord), pair.getValue());
-        }
-
-
+        for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> pair : clone.entrySet())
+            put(toBlockCoord(pair.getKey(), this.pos, bottomSectionCord), pair.getValue());
         return this;
     }
 

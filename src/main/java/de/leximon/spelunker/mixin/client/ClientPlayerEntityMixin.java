@@ -1,4 +1,4 @@
-package de.leximon.spelunker.mixin;
+package de.leximon.spelunker.mixin.client;
 
 import com.mojang.authlib.GameProfile;
 import de.leximon.spelunker.SpelunkerMod;
@@ -22,9 +22,8 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
     @Inject(method = "tick", at = @At("HEAD"))
     private void tickInject(CallbackInfo ci) {
         SpelunkerEffectRenderer renderer = SpelunkerModClient.spelunkerEffectRenderer;
-        if (renderer.setActive(hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))) {
+        if (renderer.setActive(hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)))
             renderer.clear();
-        }
     }
 
 }

@@ -5,14 +5,15 @@ import de.siphalor.tweed4.data.hjson.HjsonList;
 import de.siphalor.tweed4.data.hjson.HjsonObject;
 import de.siphalor.tweed4.data.hjson.HjsonSerializer;
 import de.siphalor.tweed4.data.hjson.HjsonValue;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,43 +21,29 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 public class SpelunkerConfig {
 
-    private static final ArrayList<BlockHighlightEntry> DEFAULT_BLOCK_HIGHLIGHT_COLORS = new ArrayList<>();
-    public static final ArrayList<LootTableEntry> lootTables = new ArrayList<>();
+    private static final Map<String[], ChunkBlockConfig> DEFAULT_BLOCK_CONFIGS = new HashMap<>();
+    public static final List<LootTableEntry> LOOT_TABLES = new ArrayList<>();
 
-    private record BlockHighlightEntry(String color, String... ids) {}
     public record LootTableEntry(Identifier id, int min, int max, int shortChance, int longChance) {}
 
-    static {
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#ffd1bd", "minecraft:iron_ore", "minecraft:deepslate_iron_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#eb5e34", "minecraft:copper_ore", "minecraft:deepslate_copper_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#505050", "minecraft:coal_ore", "minecraft:deepslate_coal_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#fff52e", "minecraft:gold_ore", "minecraft:deepslate_gold_ore", "minecraft:nether_gold_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#2ee0ff", "minecraft:diamond_ore", "minecraft:deepslate_diamond_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#2eff35", "minecraft:emerald_ore", "minecraft:deepslate_emerald_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#312eff", "minecraft:lapis_ore", "minecraft:deepslate_lapis_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#ff2e2e", "minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"));
-        DEFAULT_BLOCK_HIGHLIGHT_COLORS.add(new BlockHighlightEntry("#ffffff", "minecraft:nether_quartz_ore"));
-    }
-
+    public static boolean globalTransition = true;
     public static boolean serverValidating = true;
     public static boolean allowPotionBrewing = true;
-    private static int effectRadius = 6;
     public static int chunkRadius = 1;
-    public static int blockRadiusMax = 16 * 16;
-    public static int blockRadiusMin = 15 * 15;
     public static int amethystChance = 10;
     public static int shortPotionDuration = 45;
     public static int longPotionDuration = 90;
-    public static boolean blockTransitions = true;
-    public static Object2IntMap<Block> parsedBlockHighlightColors = new Object2IntOpenHashMap<>();
+    public static Object2ObjectMap<Block, ChunkBlockConfig> blockConfigs = new Object2ObjectOpenHashMap<>();
 
-    private static Consumer<Void> blockHighlightInitializer = v -> {};
+    private static Consumer<Void> blockConfigInitializer = v -> {};
     private static boolean blockHighlightInitialized = false;
 
     public static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), "spelunker.hjson");
@@ -87,19 +74,6 @@ public class SpelunkerConfig {
                     If this is disabled amethyst dust will also be unobtainable in survival
                     default: true
                     """);
-            rewrite = true;
-        }
-        if(!obj.hasInt("effect-radius")) {
-            obj.set("effect-radius", effectRadius).setComment("""
-                    How many blocks the effect should range
-                    a higher value than 32 is not recommended
-                    default: 6
-                    Must be greater or equal to 1
-                    """);
-            rewrite = true;
-        }
-        if (!obj.hasBoolean("block-transitions")) {
-            obj.set("block-transitions", blockTransitions).setComment("default: true");
             rewrite = true;
         }
         if (!obj.hasInt("amethyst-dust-chance")) {
@@ -162,18 +136,44 @@ public class SpelunkerConfig {
                     """);
             rewrite = true;
         }
-        if (!obj.has("block-highlight-colors")) {
-            HjsonList list = obj.addList("block-highlight-colors");
-            list.setComment("The blocks to be highlighted in the specific color");
-            for (BlockHighlightEntry entry : DEFAULT_BLOCK_HIGHLIGHT_COLORS) {
+        if(!obj.hasBoolean("block-transition")) {
+            obj.set("block-transition", globalTransition).setComment("""
+                    Determines whether an ease-out animation should be played when approaching a block
+                    If this option is false it will overwrite all block-specific transitions
+                    default: true
+                    """);
+            rewrite = true;
+        }
+        if (!obj.has("block-configs")) {
+            HjsonList list = obj.addList("block-configs");
+            list.setComment("""
+                    The configuration for the given blocks
+                    
+                    highlightColor:
+                        Specifies the color with which the block will be outlined
+                        You can also use values like "red, dark_red, blue, aqua"
+                    
+                    transition:
+                        Determines whether an ease-out animation should be played when approaching a block
+                        
+                    effectRadius:
+                        How many blocks the effect should range, a higher value than 32 is not recommended
+                        Must be greater or equal to 1
+                    """);
+            for (Map.Entry<String[], ChunkBlockConfig> entry : DEFAULT_BLOCK_CONFIGS.entrySet()) {
                 HjsonObject eObj = list.addObject(list.size());
-                eObj.set("highlightColor", entry.color());
                 HjsonList idList = eObj.addList("blockIds");
-                for (String id : entry.ids())
+                for (String id : entry.getKey())
                     idList.set(idList.size(), id);
+
+                String color = TextColor.fromRgb(entry.getValue().getColor()).getName();
+                eObj.set("highlightColor", color).setComment("default: " + color);
+                eObj.set("transition", entry.getValue().isTransition()).setComment("default: " + entry.getValue().isTransition());
+                eObj.set("effectRadius", entry.getValue().getEffectRadius()).setComment("default: " + entry.getValue().getEffectRadius());
             }
             rewrite = true;
         }
+        DEFAULT_BLOCK_CONFIGS.clear();
 
         if(rewrite) {
             CONFIG_FILE.getParentFile().mkdir();
@@ -192,26 +192,38 @@ public class SpelunkerConfig {
         allowPotionBrewing = obj.getBoolean("allow-potion-brewing", allowPotionBrewing);
         shortPotionDuration = obj.getInt("short-potion-duration", shortPotionDuration);
         longPotionDuration = obj.getInt("long-potion-duration", longPotionDuration);
-        effectRadius = obj.getInt("effect-radius", effectRadius);
-        parseEffectRadius();
-        blockTransitions = obj.getBoolean("block-transitions", blockTransitions);
         amethystChance = obj.getInt("amethyst-dust-chance", amethystChance);
-        HjsonList blockHighlightColorList = obj.get("block-highlight-colors").asList();
-        for (HjsonValue value : blockHighlightColorList) {
+
+        for (HjsonValue value : obj.get("block-configs").asList()) {
             HjsonObject blockObj = value.asObject();
-            String color = blockObj.getString("highlightColor", "#ffffff");
             List<String> blockIds = new ArrayList<>();
-            HjsonList blockIdList = blockObj.get("blockIds").asList();
-            for (HjsonValue blockIdValue : blockIdList)
+            for (HjsonValue blockIdValue : blockObj.get("blockIds").asList())
                 blockIds.add(blockIdValue.asString());
 
-            int c = TextColor.parse(color).getRgb();
-            blockHighlightInitializer = blockHighlightInitializer.andThen(v -> {
+            String hcolor = blockObj.getString("highlightColor", "#ffffff");
+            TextColor textColor = TextColor.parse(hcolor);
+            int color = 0xffffff;
+            if(textColor == null) {
+                SpelunkerMod.LOGGER.error("Invalid color '{}' specified for the block(s) '{}'.", hcolor, StringUtils.join(blockIds, ", "));
+            } else color = textColor.getRgb();
+            boolean transition = blockObj.getBoolean("transition", true);
+            int effectRadius = blockObj.getInt("effectRadius", 1);
+            if(effectRadius < 1) {
+                SpelunkerMod.LOGGER.warn("Effect radius '{}' for the block(s) '{}' is smaller than 1.", effectRadius, StringUtils.join(blockIds, ", "));
+                SpelunkerMod.LOGGER.warn("Setting it to 1.");
+                effectRadius = 1;
+            }
+
+            ChunkBlockConfig config = new ChunkBlockConfig(color, transition, effectRadius);
+            blockConfigInitializer = blockConfigInitializer.andThen(v -> {
                 for (String blockId : blockIds) {
                     Optional<Block> optBlock = Registry.BLOCK.getOrEmpty(new Identifier(blockId));
-                    if(optBlock.isEmpty())
-                        SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'", blockId);
-                    else parsedBlockHighlightColors.put(optBlock.get(), c);
+                    if (optBlock.isEmpty()) {
+                        SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'.", blockId);
+                    } else {
+                        Block block = optBlock.get();
+                        blockConfigs.put(block, config.setBlock(block));
+                    }
                 }
             });
         }
@@ -223,7 +235,7 @@ public class SpelunkerConfig {
                     SpelunkerMod.LOGGER.error("Missing targetId in loottable!");
                     continue;
                 }
-                lootTables.add(new LootTableEntry(
+                LOOT_TABLES.add(new LootTableEntry(
                         new Identifier(entry.get("targetId").asString()),
                         entry.getInt("min", 1),
                         entry.getInt("max", 1),
@@ -236,39 +248,125 @@ public class SpelunkerConfig {
 
     public static void writePacket(PacketByteBuf buf) {
         buf.writeBoolean(serverValidating);
-        buf.writeVarInt(effectRadius);
-        buf.writeVarInt(parsedBlockHighlightColors.size());
-        for (Object2IntMap.Entry<Block> entry : parsedBlockHighlightColors.object2IntEntrySet()) {
+        buf.writeVarInt(blockConfigs.size());
+        for (Object2ObjectMap.Entry<Block, ChunkBlockConfig> entry : blockConfigs.object2ObjectEntrySet()) {
+            ChunkBlockConfig conf = entry.getValue();
             buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
-            buf.writeInt(entry.getIntValue());
+            conf.write(buf);
         }
     }
 
     public static void readPacket(PacketByteBuf buf) {
         serverValidating = buf.readBoolean();
-        effectRadius = buf.readVarInt();
-        parseEffectRadius();
-
-        parsedBlockHighlightColors.clear();
+        blockConfigs.clear();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++)
-            parsedBlockHighlightColors.put(Registry.BLOCK.get(buf.readVarInt()), buf.readInt());
-    }
-
-    private static void parseEffectRadius() {
-        chunkRadius = (int) Math.ceil(effectRadius / 16f);
-        blockRadiusMax = (int) Math.pow(effectRadius, 2);
-        blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
+            blockConfigs.put(Registry.BLOCK.get(buf.readVarInt()), new ChunkBlockConfig(buf));
     }
 
     public static void initBlockHighlightConfig() {
         if(blockHighlightInitialized)
             return;
         blockHighlightInitialized = true;
-        blockHighlightInitializer.accept(null);
+        blockConfigInitializer.accept(null);
     }
 
     public static boolean isOreBlock(Block block) {
-        return parsedBlockHighlightColors.containsKey(block);
+        return blockConfigs.containsKey(block);
+    }
+
+    static {
+        // Coal
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:coal_ore", "minecraft:deepslate_coal_ore"}, new ChunkBlockConfig(0x505050, true, 16));
+
+        // Iron
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:iron_ore", "minecraft:deepslate_iron_ore"}, new ChunkBlockConfig(0xffd1bd, true, 8));
+
+        // Copper
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:copper_ore", "minecraft:deepslate_copper_ore"}, new ChunkBlockConfig(0xeb5e34, true, 12));
+
+        // Gold
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:gold_ore", "minecraft:deepslate_gold_ore", "minecraft:nether_gold_ore"}, new ChunkBlockConfig(0xfff52e, true, 8));
+
+        // Diamond
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:diamond_ore", "minecraft:deepslate_diamond_ore"}, new ChunkBlockConfig(0x2ee0ff, true, 5));
+
+        // Emerald
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:emerald_ore", "minecraft:deepslate_emerald_ore"}, new ChunkBlockConfig(0x2eff35, true, 7));
+
+        // Lapis
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:lapis_ore", "minecraft:deepslate_lapis_ore"}, new ChunkBlockConfig(0x312eff, true, 8));
+
+        // Redstone
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"}, new ChunkBlockConfig(0xff2e2e, true, 8));
+
+        // Quartz
+        DEFAULT_BLOCK_CONFIGS.put(new String[] {"minecraft:nether_quartz_ore"}, new ChunkBlockConfig(0xffffff, true, 14));
+    }
+
+    public static class ChunkBlockConfig {
+
+        private Block block;
+
+        private final int color;
+        private final boolean transition;
+        private final int effectRadius;
+
+        private int blockRadiusMax;
+        private int blockRadiusMin;
+
+        public ChunkBlockConfig(int color, boolean transition, int effectRadius) {
+            this.color = color;
+            this.transition = transition;
+            this.effectRadius = effectRadius;
+            parseEffectRadius();
+        }
+
+        public ChunkBlockConfig(PacketByteBuf buf) {
+            this(buf.readInt(), buf.readBoolean(), buf.readVarInt());
+        }
+
+        public void write(PacketByteBuf buf) {
+            buf.writeInt(color);
+            buf.writeBoolean(transition);
+            buf.writeVarInt(effectRadius);
+        }
+
+        private void parseEffectRadius() {
+            int chunkRadius = (int) Math.ceil(effectRadius / 16f);
+            if(chunkRadius > SpelunkerConfig.chunkRadius)
+                SpelunkerConfig.chunkRadius = chunkRadius;
+            blockRadiusMax = (int) Math.pow(effectRadius, 2);
+            blockRadiusMin = (int) Math.pow(effectRadius - 1, 2);
+        }
+
+        public ChunkBlockConfig setBlock(Block block) {
+            this.block = block;
+            return this;
+        }
+
+        public Block getBlock() {
+            return block;
+        }
+
+        public int getColor() {
+            return color;
+        }
+
+        public boolean isTransition() {
+            return transition;
+        }
+
+        public int getEffectRadius() {
+            return effectRadius;
+        }
+
+        public int getBlockRadiusMax() {
+            return blockRadiusMax;
+        }
+
+        public int getBlockRadiusMin() {
+            return blockRadiusMin;
+        }
     }
 }

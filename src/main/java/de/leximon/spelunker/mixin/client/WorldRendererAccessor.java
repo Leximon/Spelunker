@@ -1,4 +1,4 @@
-package de.leximon.spelunker.mixin;
+package de.leximon.spelunker.mixin.client;
 
 import net.minecraft.client.gl.ShaderEffect;
 import net.minecraft.client.render.BufferBuilderStorage;

@@ -28,7 +28,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(World.class)
 public abstract class WorldMixin implements IWorld {
@@ -37,7 +38,7 @@ public abstract class WorldMixin implements IWorld {
 
     @Shadow @Nullable public abstract MinecraftServer getServer();
 
-    private final HashMap<Vec3i, ChunkOres> dirtySpelunkerChunks = new HashMap<>();
+    private final Map<Vec3i, ChunkOres> dirtySpelunkerChunks = new ConcurrentHashMap<>();
 
     @Inject(method = "onBlockChanged", at = @At("HEAD"))
     private void onBlockChangedInject(BlockPos pos, BlockState oldBlock, BlockState newBlock, CallbackInfo ci) {
@@ -60,14 +61,12 @@ public abstract class WorldMixin implements IWorld {
             return;
         }
 
-        synchronized (dirtySpelunkerChunks) {
-            dirtySpelunkerChunks.compute(chunkPos, (p, chunk) -> {
-                if(chunk == null)
-                    chunk = new ChunkOres(chunkPos);
-                chunk.put(ChunkOres.toLocalCoord(pos), newBlock.getBlock());
-                return chunk;
-            });
-        }
+        dirtySpelunkerChunks.compute(chunkPos, (p, chunk) -> {
+            if (chunk == null)
+                chunk = new ChunkOres(chunkPos);
+            chunk.put(ChunkOres.toLocalCoord(pos), SpelunkerConfig.blockConfigs.get(newBlock.getBlock()));
+            return chunk;
+        });
     }
 
     // directly update chunks clientside if server validating is turned off or in singleplayer
@@ -77,7 +76,7 @@ public abstract class WorldMixin implements IWorld {
         if ((!SpelunkerConfig.serverValidating || client.isInSingleplayer()) && client.player != null && client.player.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
             ChunkOres chunk = SpelunkerModClient.spelunkerEffectRenderer.get(chunkPos);
             if (chunk != null)
-                chunk.processBlock(pos, newBlock.getBlock(), false);
+                chunk.processConfig(pos, SpelunkerConfig.blockConfigs.get(newBlock.getBlock()), false);
         }
     }
 
@@ -97,14 +96,10 @@ public abstract class WorldMixin implements IWorld {
             return;
 
         // send to clients
-        PacketByteBuf buf;
-        synchronized (dirtySpelunkerChunks) {
-            buf = SpelunkerEffectManager.writePacket((World) (Object) this, false, Collections.emptyList(), dirtySpelunkerChunks.values());
-            dirtySpelunkerChunks.clear();
-        }
-        for (ServerPlayerEntity p : players) {
+        PacketByteBuf buf = SpelunkerEffectManager.writePacket((World) (Object) this, false, Collections.emptyList(), dirtySpelunkerChunks.values());
+        dirtySpelunkerChunks.clear();
+        for (ServerPlayerEntity p : players)
             if (p.hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER))
                 ServerPlayNetworking.send(p, SpelunkerMod.PACKET_ORE_CHUNKS, buf);
-        }
     }
 }
