@@ -100,6 +100,7 @@ public class SpelunkerConfig {
         if (!obj.hasList("loot-tables")) {
             int min = 1, max = 1;
             int shortPotionChance = 10, longPotionChance = 25;
+
             if(obj.hasObject("loot-table")) { // load old data structure from version 1.3.0
                 HjsonObject lObj = obj.get("loot-table").asObject();
                 if(lObj.hasObject("rolls")) {
@@ -144,7 +145,7 @@ public class SpelunkerConfig {
                     """);
             rewrite = true;
         }
-        if (!obj.has("block-configs")) {
+        if (!obj.hasList("block-configs")) {
             HjsonList list = obj.addList("block-configs");
             list.setComment("""
                     The configuration for the given blocks
@@ -160,16 +161,31 @@ public class SpelunkerConfig {
                         How many blocks the effect should range, a higher value than 32 is not recommended
                         Must be greater or equal to 1
                     """);
-            for (Map.Entry<String[], ChunkBlockConfig> entry : DEFAULT_BLOCK_CONFIGS.entrySet()) {
-                HjsonObject eObj = list.addObject(list.size());
-                HjsonList idList = eObj.addList("blockIds");
-                for (String id : entry.getKey())
-                    idList.set(idList.size(), id);
 
-                String color = TextColor.fromRgb(entry.getValue().getColor()).getName();
-                eObj.set("highlightColor", color).setComment("default: " + color);
-                eObj.set("transition", entry.getValue().isTransition()).setComment("default: " + entry.getValue().isTransition());
-                eObj.set("effectRadius", entry.getValue().getEffectRadius()).setComment("default: " + entry.getValue().getEffectRadius());
+            if(obj.hasList("block-highlight-colors")) {
+                HjsonList oldList = obj.get("block-highlight-colors").asList();
+                int i = 0;
+                for (HjsonValue v : oldList) {
+                    HjsonObject vo = v.asObject();
+                    vo.set("transition", true);
+                    vo.set("effectRadius", obj.getInt("effect-radius", 16));
+                    list.set(i, vo);
+                    i++;
+                }
+                obj.remove("block-highlight-colors");
+                obj.remove("effect-radius");
+            } else {
+                for (Map.Entry<String[], ChunkBlockConfig> entry : DEFAULT_BLOCK_CONFIGS.entrySet()) {
+                    HjsonObject eObj = list.addObject(list.size());
+                    HjsonList idList = eObj.addList("blockIds");
+                    for (String id : entry.getKey())
+                        idList.set(idList.size(), id);
+
+                    String color = TextColor.fromRgb(entry.getValue().getColor()).getName();
+                    eObj.set("highlightColor", color).setComment("default: " + color);
+                    eObj.set("transition", entry.getValue().isTransition()).setComment("default: " + entry.getValue().isTransition());
+                    eObj.set("effectRadius", entry.getValue().getEffectRadius()).setComment("default: " + entry.getValue().getEffectRadius());
+                }
             }
             rewrite = true;
         }
