@@ -8,6 +8,7 @@ import java.util.Map;
 
 public class ChunkOres extends HashMap<Vec3i, SpelunkerConfig.ChunkBlockConfig> {
 
+    public static final Object SYNCHRONIZER = new Object();
     public static final ChunkOres EMPTY = new ChunkOres(Vec3i.ZERO);
 
     private final Vec3i pos;
@@ -50,6 +51,13 @@ public class ChunkOres extends HashMap<Vec3i, SpelunkerConfig.ChunkBlockConfig> 
         for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> pair : clone.entrySet())
             put(toBlockCoord(pair.getKey(), this.pos, bottomSectionCord), pair.getValue());
         return this;
+    }
+
+    @Override
+    public SpelunkerConfig.ChunkBlockConfig put(Vec3i key, SpelunkerConfig.ChunkBlockConfig value) {
+        synchronized (SYNCHRONIZER) {
+            return super.put(key, value);
+        }
     }
 
     public static Vec3i toLocalCoord(Vec3i blockPos) {
