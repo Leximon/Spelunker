@@ -5,8 +5,8 @@ import de.leximon.spelunker.mixin.BrewingRecipeRegistryAccessor;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
-import net.fabricmc.fabric.api.loot.v1.FabricLootPoolBuilder;
-import net.fabricmc.fabric.api.loot.v1.event.LootTableLoadingCallback;
+import net.fabricmc.fabric.api.loot.v2.FabricLootPoolBuilder;
+import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
@@ -14,6 +14,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
+import net.minecraft.loot.LootPool;
 import net.minecraft.loot.condition.MatchToolLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.SetPotionLootFunction;
@@ -73,14 +74,14 @@ public class SpelunkerMod implements ModInitializer {
 		}
 
 		// add potion to loot tables
-		LootTableLoadingCallback.EVENT.register((resourceManager, lootManager, id, table, setter) -> {
+		LootTableEvents.MODIFY.register((resourceManager, lootManager, id, table, setter) -> {
 			for (SpelunkerConfig.LootTableEntry entry : SpelunkerConfig.LOOT_TABLES) {
 				if(entry.id().equals(id)) {
 					LootNumberProvider rollProvider;
 					if(entry.min() == entry.max())
 						rollProvider = ConstantLootNumberProvider.create(entry.min());
 					else rollProvider = UniformLootNumberProvider.create(entry.min(), entry.max());
-					table.pool(FabricLootPoolBuilder.builder()
+					table.pool(LootPool.builder()
 							.rolls(rollProvider)
 							.with(ItemEntry.builder(Items.POTION)
 									.apply(() -> SetPotionLootFunction.builder(SPELUNKER_POTION).build())
@@ -97,9 +98,9 @@ public class SpelunkerMod implements ModInitializer {
 				}
 			}
 			if(AMETHYST_CLUSTER_LOOT_TABLE.equals(id) && SpelunkerConfig.allowPotionBrewing) {
-				table.pool(FabricLootPoolBuilder.builder()
+				table.pool(LootPool.builder()
 						.rolls(ConstantLootNumberProvider.create(1))
-								.withCondition(MatchToolLootCondition.builder(ItemPredicate.Builder.create()
+								.conditionally(MatchToolLootCondition.builder(ItemPredicate.Builder.create()
 												.enchantment(new EnchantmentPredicate(Enchantments.SILK_TOUCH, NumberRange.IntRange.ANY)))
 										.invert()
 										.build()
