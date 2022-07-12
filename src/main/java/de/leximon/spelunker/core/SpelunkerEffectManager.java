@@ -89,21 +89,23 @@ public class SpelunkerEffectManager {
         }
 
         buf.writeVarInt(add.size());
-        for (ChunkOres ores : add) {
-            Vec3i pos = ores.getPos();
-            buf.writeVarInt(pos.getX());
-            buf.writeVarInt(pos.getY());
-            buf.writeVarInt(pos.getZ());
+        synchronized (ChunkOres.SYNCHRONIZER) {
+            for (ChunkOres ores : add) {
+                Vec3i pos = ores.getPos();
+                buf.writeVarInt(pos.getX());
+                buf.writeVarInt(pos.getY());
+                buf.writeVarInt(pos.getZ());
 
-            buf.writeVarInt(ores.size());
-            for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> ore : ores.entrySet()) {
-                Vec3i orePos = ore.getKey();
-                buf.writeByte(orePos.getX());
-                buf.writeByte(orePos.getY());
-                buf.writeByte(orePos.getZ());
+                buf.writeVarInt(ores.size());
+                for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> ore : ores.entrySet()) {
+                    Vec3i orePos = ore.getKey();
+                    buf.writeByte(orePos.getX());
+                    buf.writeByte(orePos.getY());
+                    buf.writeByte(orePos.getZ());
 
-                SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
-                buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
+                    SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
+                    buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
+                }
             }
         }
         if(overwrite)
