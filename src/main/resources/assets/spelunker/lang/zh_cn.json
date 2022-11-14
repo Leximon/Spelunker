@@ -1,0 +1,12 @@
+{
+  "effect.spelunker.spelunker": "灵视",
+  "item.spelunker.amethyst_dust": "晶尘",
+  "item.minecraft.potion.effect.spelunker": "探洞者药水",
+  "item.minecraft.potion.effect.long_spelunker": "探洞者药水",
+  "item.minecraft.splash_potion.effect.spelunker": "喷溅型探洞者药水",
+  "item.minecraft.splash_potion.effect.long_spelunker": "喷溅型探洞者药水",
+  "item.minecraft.lingering_potion.effect.spelunker": "滞留型探洞者药水",
+  "item.minecraft.lingering_potion.effect.long_spelunker": "滞留型探洞者药水",
+  "item.minecraft.tipped_arrow.effect.spelunker": "探洞者之箭",
+  "item.minecraft.tipped_arrow.effect.long_spelunker": "探洞者之箭"
+}
