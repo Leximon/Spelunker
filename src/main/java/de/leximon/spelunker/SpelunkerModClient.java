@@ -26,7 +26,7 @@ public class SpelunkerModClient implements ClientModInitializer {
 
             if (spelunkerEffectRenderer.isActive()) {
                 if (!isAlreadyRenderingOutline) { // prevent the outline shader from being rendered twice due glowing entities
-                    worldRenderer.getEntityOutlineShader().render(context.tickDelta());
+                    worldRenderer.getEntityOutlinePostProcessor().render(context.tickDelta());
                     client.getFramebuffer().beginWrite(false);
                 }
                 spelunkerEffectRenderer.render(context.matrixStack(), context.camera(), worldRenderer.getBufferBuilders().getOutlineVertexConsumers());

@@ -6,13 +6,13 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ChunkHolder;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkSection;
@@ -104,7 +104,7 @@ public class SpelunkerEffectManager {
                     buf.writeByte(orePos.getZ());
 
                     SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
-                    buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
+                    buf.writeVarInt(conf == null ? -1 : Registries.BLOCK.getRawId(conf.getBlock()));
                 }
             }
         }
@@ -146,7 +146,7 @@ public class SpelunkerEffectManager {
                 int blockId = buf.readVarInt();
 
                 if(ores != null)
-                    ores.processConfig(orePos, blockId == -1 ? null : SpelunkerConfig.blockConfigs.get(Registry.BLOCK.get(blockId)), true);
+                    ores.processConfig(orePos, blockId == -1 ? null : SpelunkerConfig.blockConfigs.get(Registries.BLOCK.get(blockId)), true);
             }
             if(overwrite)
                 chunks.add(ores);

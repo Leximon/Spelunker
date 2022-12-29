@@ -10,9 +10,9 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -233,7 +233,7 @@ public class SpelunkerConfig {
             ChunkBlockConfig config = new ChunkBlockConfig(color, transition, effectRadius);
             blockConfigInitializer = blockConfigInitializer.andThen(v -> {
                 for (String blockId : blockIds) {
-                    Optional<Block> optBlock = Registry.BLOCK.getOrEmpty(new Identifier(blockId));
+                    Optional<Block> optBlock = Registries.BLOCK.getOrEmpty(new Identifier(blockId));
                     if (optBlock.isEmpty()) {
                         SpelunkerMod.LOGGER.error("Unknown block id in config: '{}'.", blockId);
                     } else {
@@ -267,7 +267,7 @@ public class SpelunkerConfig {
         buf.writeVarInt(blockConfigs.size());
         for (Object2ObjectMap.Entry<Block, ChunkBlockConfig> entry : blockConfigs.object2ObjectEntrySet()) {
             ChunkBlockConfig conf = entry.getValue();
-            buf.writeVarInt(Registry.BLOCK.getRawId(entry.getKey()));
+            buf.writeVarInt(Registries.BLOCK.getRawId(entry.getKey()));
             conf.write(buf);
         }
     }
@@ -277,7 +277,7 @@ public class SpelunkerConfig {
         blockConfigs.clear();
         int c = buf.readVarInt();
         for (int i = 0; i < c; i++)
-            blockConfigs.put(Registry.BLOCK.get(buf.readVarInt()), new ChunkBlockConfig(buf));
+            blockConfigs.put(Registries.BLOCK.get(buf.readVarInt()), new ChunkBlockConfig(buf));
     }
 
     public static void initBlockHighlightConfig() {
