@@ -28,11 +28,11 @@ public class SpelunkerEffectManager {
 
     public static ChunkOres findOresInChunk(World world, Vec3i sectionPos) {
         Chunk chunk = null;
-        if(world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
+        if (world.getChunkManager().isChunkLoaded(sectionPos.getX(), sectionPos.getZ())) {
             if (world instanceof ServerWorld sw) {
                 ChunkHolder chunkHolder = ((ThreadedAnvilChunkStorageAccessor) sw.getChunkManager().threadedAnvilChunkStorage)
                         .spelunkerGetChunkHolder(ChunkPos.toLong(sectionPos.getX(), sectionPos.getZ())); // prevent random server crash ¯\_(ツ)_/¯
-                if(chunkHolder != null)
+                if (chunkHolder != null)
                     chunk = chunkHolder.getWorldChunk();
             } else {
                 chunk = world.getChunk(sectionPos.getX(), sectionPos.getZ(), ChunkStatus.FULL, false);
@@ -89,26 +89,24 @@ public class SpelunkerEffectManager {
         }
 
         buf.writeVarInt(add.size());
-        synchronized (ChunkOres.SYNCHRONIZER) {
-            for (ChunkOres ores : add) {
-                Vec3i pos = ores.getPos();
-                buf.writeVarInt(pos.getX());
-                buf.writeVarInt(pos.getY());
-                buf.writeVarInt(pos.getZ());
+        for (ChunkOres ores : add) {
+            Vec3i pos = ores.getPos();
+            buf.writeVarInt(pos.getX());
+            buf.writeVarInt(pos.getY());
+            buf.writeVarInt(pos.getZ());
 
-                buf.writeVarInt(ores.size());
-                for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> ore : ores.entrySet()) {
-                    Vec3i orePos = ore.getKey();
-                    buf.writeByte(orePos.getX());
-                    buf.writeByte(orePos.getY());
-                    buf.writeByte(orePos.getZ());
+            buf.writeVarInt(ores.size());
+            for (Map.Entry<Vec3i, SpelunkerConfig.ChunkBlockConfig> ore : ores.entrySet()) {
+                Vec3i orePos = ore.getKey();
+                buf.writeByte(orePos.getX());
+                buf.writeByte(orePos.getY());
+                buf.writeByte(orePos.getZ());
 
-                    SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
-                    buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
-                }
+                SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
+                buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
             }
         }
-        if(overwrite)
+        if (overwrite)
             buf.writeVarInt(world.getBottomSectionCoord());
 
         return buf;
@@ -145,14 +143,14 @@ public class SpelunkerEffectManager {
                 );
                 int blockId = buf.readVarInt();
 
-                if(ores != null)
+                if (ores != null)
                     ores.processConfig(orePos, blockId == -1 ? null : SpelunkerConfig.blockConfigs.get(Registry.BLOCK.get(blockId)), true);
             }
-            if(overwrite)
+            if (overwrite)
                 chunks.add(ores);
         }
 
-        if(overwrite) {
+        if (overwrite) {
             int bottomSectionCord = buf.readVarInt();
             renderer.addChunks(bottomSectionCord, chunks);
         }
