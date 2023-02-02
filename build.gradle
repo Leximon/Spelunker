@@ -108,12 +108,10 @@ curseforge {
 			requiredDependency "fabric-api" // Fabric API
 		}
 
-		afterEvaluate {
-			mainArtifact(remapJar) {
-				displayName = "[${gameVersions[0]}] Spelunker ${project.mod_version}"
-			}
-			uploadTask.dependsOn(remapJar)
+		mainArtifact(remapJar) {
+			displayName = "[${gameVersions[0]}] Spelunker ${project.mod_version}"
 		}
+		uploadTask.dependsOn(remapJar)
 	}
 	options {
 		forgeGradleIntegration = false
