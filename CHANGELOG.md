@@ -1,1 +1,2 @@
-
+- fixed an intermittent client crashing when breaking blocks with spelunking potion active [#15](https://github.com/Leximon/Spelunker/issues/15)
+- fixed the highlight effect lagging behind when moving (especially on low frame rates)
