@@ -111,9 +111,12 @@ curseforge {
 		mainArtifact(remapJar) {
 			displayName = "[${gameVersions[0]}] Spelunker ${project.mod_version}"
 		}
-		uploadTask.dependsOn(remapJar)
 	}
 	options {
 		forgeGradleIntegration = false
 	}
+}
+
+afterEvaluate {
+	tasks.curseforge572592.dependsOn remapJar
 }
