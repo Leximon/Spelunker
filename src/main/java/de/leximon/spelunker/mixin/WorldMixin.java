@@ -64,7 +64,7 @@ public abstract class WorldMixin implements IWorld {
         dirtySpelunkerChunks.compute(chunkPos, (p, chunk) -> {
             if (chunk == null)
                 chunk = new ChunkOres(chunkPos);
-            chunk.put(ChunkOres.toLocalCoord(pos), SpelunkerConfig.blockConfigs.get(newBlock.getBlock()));
+            chunk.put(ChunkOres.toLocalCoord(pos), SpelunkerConfig.blockConfigs.getOrDefault(newBlock.getBlock(), SpelunkerConfig.NONE_BLOCK_CONFIG));
             return chunk;
         });
     }
