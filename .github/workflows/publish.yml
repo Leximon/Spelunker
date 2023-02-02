@@ -26,7 +26,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           
-      - name: Gradle Build
+      - name: Gradle Publish To Mod Sites
         uses: gradle/gradle-build-action@v2.1.5
         with:
           arguments: publishToModSites
