@@ -94,7 +94,7 @@ curseforge {
 	def slurper = new JsonSlurper()
 	def gameVersions = slurper.parseText(project.mod_game_versions)
 
-	apiKey = System.getenv("CURSEFORGE_TOKEN")
+	apiKey = System.getenv("CURSEFORGE_TOKEN") ?: ""
 	project {
 		id = "572592"
 		releaseType = "release"
