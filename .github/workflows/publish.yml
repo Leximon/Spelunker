@@ -26,7 +26,11 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           
-      - name: Gradle Publish To Mod Sites
+      - name: Gradle Publish To Modrinth
         uses: gradle/gradle-build-action@v2.1.5
         with:
-          arguments: publishToModSites
+          arguments: modrinth
+      - name: Gradle Publish To CurseForge
+        uses: gradle/gradle-build-action@v2.1.5
+        with:
+          arguments: curseforge
