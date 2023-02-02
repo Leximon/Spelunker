@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 public class SpelunkerConfig {
 
     private static final Map<String[], ChunkBlockConfig> DEFAULT_BLOCK_CONFIGS = new HashMap<>();
+    public static final ChunkBlockConfig NONE_BLOCK_CONFIG = new ChunkBlockConfig(0, false, 0);
     public static final List<LootTableEntry> LOOT_TABLES = new ArrayList<>();
 
     public record LootTableEntry(Identifier id, int min, int max, int shortChance, int longChance) {}

@@ -103,7 +103,7 @@ public class SpelunkerEffectManager {
                 buf.writeByte(orePos.getZ());
 
                 SpelunkerConfig.ChunkBlockConfig conf = ore.getValue();
-                buf.writeVarInt(conf == null ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
+                buf.writeVarInt(SpelunkerConfig.NONE_BLOCK_CONFIG == conf ? -1 : Registry.BLOCK.getRawId(conf.getBlock()));
             }
         }
         if (overwrite)
