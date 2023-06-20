@@ -38,6 +38,8 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void moveEndInject(CallbackInfo ci) {
+        World world = getWorld();
+
         if(!hasStatusEffect(SpelunkerMod.STATUS_EFFECT_SPELUNKER)) {
             if(!spelunkerEffectChunks.isEmpty())
                 spelunkerEffectChunks.clear();

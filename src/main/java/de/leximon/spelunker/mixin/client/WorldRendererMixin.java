@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 public abstract class WorldRendererMixin {
 
     @SuppressWarnings("InvalidInjectorMethodSignature") // Minecraft Development plugin is crazy again
-    @ModifyVariable(method = "render", at = @At(value = "CONSTANT", args = "stringValue=blockentities", ordinal = 0), ordinal = 4)
+    @ModifyVariable(method = "render", at = @At(value = "CONSTANT", args = "stringValue=blockentities", ordinal = 0), ordinal = 3)
     private boolean modify(boolean value) {
         return value || SpelunkerModClient.spelunkerEffectRenderer.isActive();
     }

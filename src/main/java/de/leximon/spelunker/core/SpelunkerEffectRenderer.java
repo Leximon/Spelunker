@@ -2,17 +2,15 @@ package de.leximon.spelunker.core;
 
 import de.leximon.spelunker.SpelunkerMod;
 import net.minecraft.client.model.ModelPart;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.OutlineVertexConsumerProvider;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -72,7 +70,7 @@ public class SpelunkerEffectRenderer {
      * RENDER CHUNKS
      */
 
-    private static final ModelPart.Cuboid CUBE = new ModelPart.Cuboid(0, 0, 0, 0, 0, 16, 16, 16, 0, 0, 0, false, 0, 0);
+    private static final ModelPart.Cuboid CUBE = new ModelPart.Cuboid(0, 0, 0, 0, 0, 16, 16, 16, 0, 0, 0, false, 0, 0, EnumSet.allOf(Direction.class));
     private static final RenderLayer RENDER_LAYER = RenderLayer.getOutline(SpelunkerMod.identifier("textures/none.png"));
 
     public void renderChunk(ChunkOres chunk, MatrixStack matrices, Vec3d playerPos, OutlineVertexConsumerProvider vertexConsumers) {
