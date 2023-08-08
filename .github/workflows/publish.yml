@@ -27,11 +27,11 @@ jobs:
           java-version: ${{ matrix.java }}
           
       - name: Gradle Publish To Modrinth
-        uses: gradle/gradle-build-action@v2.1.5
+        uses: gradle/gradle-build-action@v2.4.2
         with:
           arguments: modrinth
       
       - name: Gradle Publish To CurseForge
-        uses: gradle/gradle-build-action@v2.1.5
+        uses: gradle/gradle-build-action@v2.4.2
         with:
           arguments: curseforge
